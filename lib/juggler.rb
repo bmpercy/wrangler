@@ -5,47 +5,10 @@ require 'juggler/exception_notifier.rb'
 module Juggler
 
   def self.included(base)
-
     # only add in the controller-specific methods if the including class is one
     if class_has_ancestor?(base, ActionController::Base)
-
-      # check the global configuration regarding exception handling. if config
-      # says not to handle exceptions in public or locally, then fall back on
-      # default exception handling without Juggler
-#      unless Juggler::ExceptionHandler.config[:handle_public_errors]
-
-#        puts "\n\nTODO: removing rescue_action_in_public from CMs"
-
-#        ControllerMethods.send(:remove_method, :rescue_action_in_public)
-
-#        puts "TODO: is the method gone?: #{ControllerMethods.instance_methods.include?('rescue_action_in_public') ? 'FALSE' : 'TRUE'}"
-#      else
-#        puts "\n\nTODO: NOT removing rescue_action_in_public from CMs"
-#      end
-
-#      unless Juggler::ExceptionHandler.config[:handle_local_errors]
-#        puts "\n\nTODO: removing rescue_action_locally from CMs"
-#        puts "TODO: is the method there?: #{ControllerMethods.instance_methods.include?('rescue_action_locally') ? 'TRUE' : 'FALSE'}"
-#        puts "TODO: all methods: #{ControllerMethods.instance_methods.sort.to_yaml}"
-
-#        ControllerMethods.send(:remove_method, :rescue_action_locally)
-#        end
-
-#        ControllerMethods.send(:remove_method, :rescue_action_locally)
-#      else
-#        puts "\n\nTODO: NOT removing rescue_action_locally from CMs"
-#      end
-
-      puts "\n\nTODO: BEFORE does base contain rescue_action_in_public?: #{base.instance_methods.include?('rescue_action_in_public') ? 'TRUE' : 'FALSE'}"
-      puts "\n\nTODO: BEFORE does base contain rescue_action_locally?: #{base.instance_methods.include?('rescue_action_locally') ? 'TRUE' : 'FALSE'}"
-
       base.send(:include, ControllerMethods)
-
-      puts "\n\nTODO: AFTER does base contain rescue_action_in_public?: #{base.instance_methods.include?('rescue_action_in_public') ? 'TRUE' : 'FALSE'}"
-      puts "\n\nTODO: AFTER does base contain rescue_action_locally?: #{base.instance_methods.include?('rescue_action_locally') ? 'TRUE' : 'FALSE'}"
     end
-
-    puts "\n\nTODO: juggler has been included into #{base.name}!\n\n"
   end
 
   # module of instance methods to be added to the class including Juggler
@@ -70,36 +33,16 @@ module Juggler
     # looks for to override default behavior
     #---------------------------------------------------------------------------
     if Juggler::ExceptionHandler.config[:handle_public_errors]
-
-      puts "\n\nTODO: adding in the public handler!\n\n"
-
       def rescue_action_in_public(exception)
-
-        puts "\n\nTODO: rescuing in public!\n\n"
-
         handle_exception(exception, :request => request,
                                     :render_errors => true)
       end
-
-    else
-
-      puts "\n\nTODO: NOT adding in the local handler!\n\n"
-
-
     end
     if Juggler::ExceptionHandler.config[:handle_local_errors]
-
-      puts "\n\nTODO: adding in the local handler!\n\n"
-
       def rescue_action_locally(exception)
-
-        puts "\n\nTODO: rescuing locally!\n\n"
-
         handle_exception(exception, :request => request,
                                     :render_errors => true)
       end
-    else
-      puts "\n\nTODO: NOT adding in the local handler!\n\n"
     end
 
     # extract a hash of relevant (and serializable) parameters from a request
@@ -119,8 +62,6 @@ module Juggler
       end
 
       params = {}
-      # think adding these both is the right thing to do...
-      # TODO: test with GET (works) and POST/PUT/DELETE (???)
       if self.respond_to?(:filter_parameters)
         params.merge!(
                       filter_parameters(request.env['action_controller.request.query_parameters'])
@@ -155,14 +96,12 @@ module Juggler
       return skip_env
     end
 
-    # select the proper file to render and do so
+    # select the proper file to render and do so. if the usual places don't
+    # turn up an appropriate template (see README), then fall back on
+    # an app-specific default error page or the ultimate back up gem default
+    # page.
     #---------------------------------------------------------------------------
     def render_error_template(exception, status_code)
-      # TODO: instead of raising exception, log error, send notification but pick
-      # a default static file or template specified in config by user, and
-      # if that fails, put a hardcoded path here and make sure that file is
-      # in the gem
-
       file_path = get_view_path_for_exception(exception, status_code)
       
       # if that didn't work, fall back on configured app-specific default
@@ -183,39 +122,13 @@ module Juggler
                   file_path)
       end
 
-      puts "\n\nTODO: going to render error using #{file_path}"
-
-      # TODO: try with and without layout...
       render :file => file_path,
              :status => status_code
     end
 
-    # TODO: put this in the README as well
-
-    # select the appropriate view path for the exception/status code
-    #
-    # rules:
-    # 1) if there is an explicit mapping from this exception to an error
-    #    page in :error_class_xxx_templates, use that
-    # 2) if there is a mapping in :error_class_templates for which this
-    #    exception returns true to an is_a? call, use that
-    # 3) if there is a file/template corresponding to the exception
-    #    name (underscorified) in one of the following locations, use that:
-    #   a) config[:error_template_dir]/
-    #   b) RAILS_ROOT/public/
-    #   c) JUGGLER_ROOT/rails/app/views/juggler/
-    # 4) if there is a file/template corresponding to the status code
-    #    (e.g. named ###.html.erb where ### is the status code) in one
-    #    of the following locations, use that:
-    #   a) config[:error_template_dir]/
-    #   b) RAILS_ROOT/public/
-    #   c) JUGGLER_ROOT/rails/app/views/juggler/
-    # 5) if there is a file/template corresponding to a parent class name of
-    #    the exception (underscorified) one of the following locations,
-    #    use that:
-    #   a) config[:error_template_dir]/
-    #   b) RAILS_ROOT/public/
-    #   c) JUGGLER_ROOT/rails/app/views/juggler/
+    # select the appropriate view path for the exception/status code. see
+    # README or the code for the different attempts that are made to find
+    # a template.
     #---------------------------------------------------------------------------
     def get_view_path_for_exception(exception, status_code)
 
@@ -253,7 +166,6 @@ module Juggler
 
         if template_mappings[exception_class]
           error_file = template_mappings[exception_class]
-          puts "\n\nTODO: found direct exception to template mapping!: '#{error_file}'"
 
           return error_file if File.exists?(error_file)
 
@@ -270,7 +182,6 @@ module Juggler
 
         if ancestor_class
           error_file = template_mappings[ancestor_class]
-          puts "\n\nTODO: found ancestor exception to template mapping!: '#{error_file}'"
 
           return error_file if File.exists?(error_file)
 
@@ -293,16 +204,12 @@ module Juggler
       exception_pattern = "#{exception_filename_root}#{format_extension_pattern}"
       file_path = find_file_matching_pattern(search_paths, exception_pattern)
 
-      puts "\n\nTODO: found exception template in search path!: '#{file_path}'" if file_path
-
       return file_path if file_path
 
       # search for a file named after the error status code in search dirs
 
       status_code_pattern = "#{status_code}#{format_extension_pattern}"
       file_path = find_file_matching_pattern(search_paths, status_code_pattern)
-
-      puts "\n\nTODO: found status code template in search path!: '#{file_path}'" if file_path
 
       return file_path if file_path
 
@@ -317,8 +224,6 @@ module Juggler
         exception_pattern =
           "#{curr_ancestor.name.underscore}#{format_extension_pattern}"
         file_path = find_file_matching_pattern(search_paths, exception_pattern)
-
-        puts "\n\nTODO: found exception template in search path!: '#{file_path}'" if file_path
 
         return file_path if file_path
 

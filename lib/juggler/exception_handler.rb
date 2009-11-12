@@ -77,8 +77,6 @@ module Juggler
       # just DON'T change this!
       :absolute_last_resort_default_error_template =>
         File.join(JUGGLER_ROOT,'rails','app','views','juggler','500.html')
-
-      # TODO: could also add manual mappings from status_codes to templates...
     }
 
     cattr_accessor :config
@@ -135,13 +133,6 @@ module Juggler
       end
     end
 
-  # TODO: allow non-controller cases...maybe copy the cool approach to giving
-  # a method like notify_on_error { ... } that runs the block and notifies
-  # if an exception bubbles up
-
-  # TODO: allow configuring different settings for each controller? not too
-  # important for us...
-
   end # end ExceptionHandler class
 
   ##############################################################################
@@ -193,11 +184,6 @@ module Juggler
     status_code = Juggler::ExceptionHandler.status_code_for_exception(exception)
     request_data = request_data_from_request(request) unless request.nil?
 
-    puts "\n\nTODO: status code is: #{status_code}"
-#    puts "TODO: request data:"
-#    puts request_data.to_yaml
-#    puts "\n\n"
-
     if notify_on_exception?(exception, status_code)
       if notify_with_delayed_job?
         # don't pass in request as it contains not-easily-serializable stuff
@@ -220,14 +206,7 @@ module Juggler
     log_exception(exception, request_data, status_code)
 
     if render_errors
-
-      puts "\n\nTODO: rendering error"
-
       render_error_template(exception, status_code)
-
-    else
-      puts "\n\nTODO: NOT rendering error"
-
     end
   end
 
@@ -280,10 +259,5 @@ module Juggler
 
     return use_dj
   end
-
-
-  # TODO: add any non-controller method as module_methods as well...
-
-
 
 end

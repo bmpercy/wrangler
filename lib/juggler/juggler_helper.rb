@@ -2,6 +2,7 @@ module Juggler
   JUGGLER_ROOT = "#{File.dirname(__FILE__)}/../.."
 
   # make all of these instance methods act as  module functions as well
+  # (any instance method below this gets added as a module function as well)
   module_function
 
   # utility to determine if a class has another class as its ancestor. 
@@ -41,9 +42,6 @@ module Juggler
     search_dirs = [search_dirs] unless search_dirs.is_a?(Array)
 
     search_dirs.each do |d|
-
-      puts "TODO: trying to find #{pattern} in #{d}"
-
       matches = Dir.glob(File.join(d, pattern))
       return matches.first if matches.size > 0
     end

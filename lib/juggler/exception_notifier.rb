@@ -53,13 +53,7 @@ module Juggler
                                request_data = nil,
                                request = nil)
 
-      puts "\n\n\nTODO: in exception notifier's exception notification method!\n\n"
-      puts "TODO: exception is #{exception}"
-      puts "TODO: proc_name is #{proc_name}"
-
       ensure_session_loaded(request)
-
-      # TODO: subject support for non-controller-based exceptions
 
       # NOTE: be very careful pulling data out of request in the view...it is
       # NOT cleaned, and may contain private data (e.g. passwords), so 
@@ -74,13 +68,6 @@ module Juggler
         }
 
       body_hash.merge! extract_data_from_request_data(request_data)
-
-    # TODO maybe 'sanitize backtrace' as in exception_notifier.rb (looks like it's just
-    # masking the rails dir location by substituting it with "[RAILS ROOT]", i guess
-    # for security??? (uses the 'pathname' lib (Pathname is the class))
-
-      # TODO: make sure that the smtp_settings is changed to send from the
-      # monitor@ account instead of notice@...
 
       from         config[:from_address]
       recipients   config[:recipient_addresses]
