@@ -1,0 +1,44 @@
+<%#
+  # NOTE: be very careful pulling data out of request in the view...it is
+  # NOT cleaned, and may contain private data (e.g. passwords), so 
+  # scrutinize any use of @request in the views!
+  #-----------------------------------------------------------------------------
+-%>
+<% unless @request_data.blank? -%>
+  <%= @protocol %><%= @host %><%= @uri %>
+<% end -%>
+
+A <%= @exception.class %> occurred:
+  <%= @exception.message %>
+  <%= @backtrace.first %>
+
+<% unless @backtrace.blank? -%>
+--------------------------------------------------
+BACKTRACE
+--------------------------------------------------
+<%= @backtrace.join("\n") %>
+<% end -%>
+
+<% unless @request.nil? || @request.session.nil? -%>
+--------------------------------------------------
+SESSION
+--------------------------------------------------
+*** session_id ***
+<%= @request.session_options[:id] %>
+
+*** data ***
+<%= @request.session.to_hash.to_yaml %>
+<% end -%>
+
+<% unless @request_data.blank? -%>
+--------------------------------------------------
+REQUEST DATA
+--------------------------------------------------
+*** params ***
+  <%= @request_data.delete(:params).inspect %>
+
+*** request headers ***
+  <% @request_data.keys.sort.each do |k| -%>
+<%= "#{k}: #{@request_data[k].inspect}" %>
+  <% end -%>
+<% end -%>
