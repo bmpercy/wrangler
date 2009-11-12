@@ -1,11 +1,22 @@
 module Juggler
+  # handles notifying (sending emails) for the juggler gem. configuration for
+  # the class is set in an initializer via the configure() method, e.g.
+  #
+  # Juggler::ExceptionNotifier.configure do |config|
+  #   config[:key] = value
+  # end
+  #
+  # see README or source code for possible values and default settings
+  #-----------------------------------------------------------------------------
   class ExceptionNotifier < ActionMailer::Base
-
     # the default configuration
     @@config ||= {
       :from_address => '',
       :recipient_addresses => [],
-      :subject_prefix => "[#{(defined?(Rails) ? Rails.env : RAILS_ENV).capitalize} ERROR] ",
+      # note: will be preceded by proc_name (if any)
+      :subject_prefix => "#{(defined?(Rails) ? Rails.env : RAILS_ENV).capitalize} ERROR",
+      # can define app-specific mail views using the data available in
+      # exception_notification()
       :mailer_template_root => File.join(JUGGLER_ROOT, 'views')
     }
 
@@ -22,6 +33,7 @@ module Juggler
     #
     # arguments:
     #   - exception: the exception that was raised
+    #   - proc_name: the name of the process in which the exception arised
     #   - backtrace: the stack trace from the exception (passing in excplicitly
     #                because serializing the exception does not preserve the
     #                backtrace (in case delayed_job is used to async the email)
@@ -36,10 +48,14 @@ module Juggler
     #              be nil and MUST be nil if calling this method with
     #              delayed_job. Optional.
     #---------------------------------------------------------------------------
-    def exception_notification(exception, backtrace, status_code = nil,
-                               request_data = nil, request = nil)
+    def exception_notification(exception, proc_name, backtrace,
+                               status_code = nil,
+                               request_data = nil,
+                               request = nil)
 
       puts "\n\n\nTODO: in exception notifier's exception notification method!\n\n"
+      puts "TODO: exception is #{exception}"
+      puts "TODO: proc_name is #{proc_name}"
 
       ensure_session_loaded(request)
 
@@ -68,7 +84,9 @@ module Juggler
 
       from         config[:from_address]
       recipients   config[:recipient_addresses]
-      subject      "#{config[:subject_prefix]} #{exception.class.name}: " +
+      subject      "[#{proc_name + (proc_name ? ' ' : '')}" +
+                   "#{config[:subject_prefix]}] " +
+                   "#{exception.class.name}: " +
                    "#{exception.message.inspect}"
       body         body_hash
       sent_on      Time.now
@@ -78,12 +96,14 @@ module Juggler
     # helper to force loading of session data in case of lazy loading (Rails
     # 2.3). if the argument isn't a request object, then don't bother, cause
     # it won't have session.
-    #-----------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     def ensure_session_loaded(request)
       request.session.inspect if !request.nil? && request.respond_to?(:session)
       true
     end
 
+    # extract relevant (and serializable) data from a request object
+    #---------------------------------------------------------------------------
     def extract_data_from_request_data(request_data)
       if request_data
         { :host => host_from_request_data(request_data),
@@ -95,19 +115,26 @@ module Juggler
       end
     end
 
+    # extract the host from request object
+    #---------------------------------------------------------------------------
     def host_from_request_data(request_data)
       request_data['HTTP_X_REAL_IP'] ||
         request_data['HTTP_X_FORWARDED_HOST'] ||
         request_data['HTTP_HOST']
     end
 
+    # extract protocol from request object
+    #---------------------------------------------------------------------------
     def protocol_from_request_data(request_data)
       request_data['SERVER_PROTOCOL']
     end
 
+    # extract URI from request object
+    #---------------------------------------------------------------------------
     def uri_from_request_data(request_data)
       request_data['REQUEST_URI']
     end
 
   end
+
 end

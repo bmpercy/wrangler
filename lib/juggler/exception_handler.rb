@@ -1,22 +1,9 @@
 module Juggler
 
-  def self.http_status_codes
-    {
-      "400" => "Bad Request",
-      "401" => "Unuthorized",
-      "403" => "Forbidden",
-      "404" => "Not Found",
-      "405" => "Method Not Allowed",
-      "410" => "Gone",
-      "418" => "I'm a teapot", # a joke thing...just here for 'completeness'
-      "422" => "Unprocessable Entity",
-      "423" => "Locked",
-      "500" => "Internal Server Error",
-      "501" => "Not Implemented",
-      "503" => "Service Unavailable"
-    }
-  end
-
+  # a utility method that should only be used internally. don't call this; it
+  # should only be called once by the Config class and you can get/set it there.
+  # returns a mapping from exception classes to http status codes
+  #-----------------------------------------------------------------------------
   def self.codes_for_exception_classes
     classes = {
       # These are standard errors in rails / ruby
@@ -24,18 +11,8 @@ module Juggler
       TypeError =>      "503",
       RuntimeError =>   "500",
       ArgumentError =>  "500",
-      #TODO: rip these off too?...include and update comment if so
-      # These are custom error names defined in lib/super_exception_notifier/custom_exception_classes
-#      AccessDenied =>   "403",
-#      PageNotFound =>   "404",
-#      InvalidMethod =>  "405",
-#      ResourceGone =>   "410",
-#      CorruptData =>    "422",
-#      NoMethodError =>  "500",
-#      NotImplemented => "501",
-#      MethodDisabled => "200",
       # the default mapping for an unrecognized exception class
-      :default => "500",
+      :default => "500"
     }
 
     # from exception_notification gem:
@@ -57,19 +34,19 @@ module Juggler
     return classes
   end
 
-  
-
-  # TODO: figure out what to do with this class (if anything). looksl ike all of the logic
-  # has been pushed into the module that gets included by the controllers (cause its
-  # methods reach into controller state a lot....:( so maybe just convert this to a
-  # config-only class? and it gets read by the juggler module, but that's it?
-
-  # TODO: comment me
+  # class that holds configuration for the exception handling logic. may also
+  # include a helper method or two, but the main interaction with
+  # ExceptionHandler is setting and getting config, e.g.
+  #
+  # Juggler::ExceptionHandler.configure do |handler_config|
+  #   handler_config.merge! :key => value
+  # end
+  #-----------------------------------------------------------------------------
   class ExceptionHandler
 
     # the default configuration
     @@config ||= {
-      :app_name => 'MYAPP',
+      :app_name => '',
       :handle_local_errors => false,
       :handle_public_errors => true,
       # ignored if :handle_local_errors is false
@@ -81,44 +58,30 @@ module Juggler
       :delayed_job_for_non_controller_errors => false,
   
       # add/remove from this list as desired in environment configuration
-      :error_class_status_codes => Juggler.codes_for_exception_classes,
-      :http_status_codes => Juggler.http_status_codes,
+      :error_class_status_codes => Juggler::codes_for_exception_classes,
       :notify_exception_classes => %w(),
       :notify_status_codes => %w( 405 500 503 ),
       :error_template_dir => File.join(RAILS_ROOT, 'app', 'views', 'error'),
+      :error_class_html_templates => {},
+      :error_class_js_templates => {},
+      :default_error_template => '',
+      :codes_for_exception_classes => Juggler::codes_for_exception_classes,
       # these filter out any HTTP params that are undesired
       :request_env_to_skip => [ /^rack\./,
                                 "action_controller.rescue.request",
                                 "action_controller.rescue.response" ],
-#     mapping from exception classes to templates (if desired), express
-#     in absolute paths. use wildcards like on cmd line (glob-like), NOT
-#     regexp-style
-      :error_class_html_templates => {},
-      :error_class_js_templates => {}
+      # mapping from exception classes to templates (if desired), express
+      # in absolute paths. use wildcards like on cmd line (glob-like), NOT
+      # regexp-style
 
-# TODO: could also add manual mappings from status_codes to templates...meh.
+      # just DON'T change this!
+      :absolute_last_resort_default_error_template =>
+        File.join(JUGGLER_ROOT,'rails','app','views','juggler','500.html')
 
-# TODO: only include this if we use it
-#      :verbose = false
+      # TODO: could also add manual mappings from status_codes to templates...
     }
 
     cattr_accessor :config
-
-  # configuration:
-  # use delayed_job or not if in controller
-  # use delayed_job or not if in non-controller
-  # on/off for local requests
-  # from address
-  # recipient addresses
-  # list of exceptions and the http error codes they map to
-  # list of exceptions to notify for (allow :only and :except behavior)
-  # list of http error codes to notify for (allow :only and :except behavior)
-  # application name
-  # 
-
-
-
-
 
     # allows for overriding default configuration settings.
     # in your environment.rb or environments/<env name>.rb, use a block that
@@ -158,6 +121,20 @@ module Juggler
       yield @@config
     end
 
+
+    # translate the exception class to an http status code, using default
+    # code (set in config) if the exception class isn't excplicitly mapped
+    # to a status code in config
+    #---------------------------------------------------------------------------
+    def self.status_code_for_exception(exception)
+      if exception.respond_to?(:status_code)
+        return exception.status_code
+      else
+        return config[:error_class_status_codes][exception.class] ||
+               config[:error_class_status_codes][:default]
+      end
+    end
+
   # TODO: allow non-controller cases...maybe copy the cool approach to giving
   # a method like notify_on_error { ... } that runs the block and notifies
   # if an exception bubbles up
@@ -165,15 +142,148 @@ module Juggler
   # TODO: allow configuring different settings for each controller? not too
   # important for us...
 
-  # TODO: allow for html vs. js to work smoothly...just pick the right template
-  # based on the accepts value in request
+  end # end ExceptionHandler class
 
-  # TODO: set up some default locations to look for error code pages
-  # e.g public/###.html , app/views/errors/###.html.erb
-  # 1) public/###.html (or ###.js???)
-  # 2) <template dir in config>/###.html.erb / js.erb
-  # 3) gem/rails/app/views/exception_handler/###.html (or ###.js???)
+  ##############################################################################
+  # actual exception handling code
+  ##############################################################################
 
+  # make all of these instance methods also module functions
+  module_function
 
+  # execute the code block passed as an argument, and follow notification
+  # rules if an exception bubbles out of the block.
+  #
+  # return value:
+  #   * if an exception bubbles out of the block, the exception is re-raised to
+  #     calling code.
+  #   * otherwise, returns nil
+  #-----------------------------------------------------------------------------
+  def notify_on_error(proc_name = nil, &block)
+    begin
+      yield
+    rescue => exception
+      options = {}
+      options.merge! :proc_name => proc_name unless proc_name.nil?
+      handle_exception(exception, options)
+    end
+
+    return nil
   end
+
+  # the main exception-handling method. decides whether to notify or not,
+  # whether to render an error page or not, and to make it happen.
+  #
+  # arguments:
+  #   - exception: the exception that was caught
+  #
+  # options:
+  #   :request: the request object (if any) that resulted in the exception
+  #   :render_errors: boolean indicating if an error page should be rendered
+  #                   or not (Rails only)
+  #   :proc_name: a string representation of the process/app that was running
+  #               when the exception was raised. default value is
+  #               Juggler::ExceptionHandler.config[:app_name].
+  #-----------------------------------------------------------------------------
+  def handle_exception(exception, options = {})
+    request = options[:request]
+    render_errors = options[:render_errors] || false
+    proc_name = options[:proc_name] || config[:app_name]
+
+    status_code = Juggler::ExceptionHandler.status_code_for_exception(exception)
+    request_data = request_data_from_request(request) unless request.nil?
+
+    puts "\n\nTODO: status code is: #{status_code}"
+#    puts "TODO: request data:"
+#    puts request_data.to_yaml
+#    puts "\n\n"
+
+    if notify_on_exception?(exception, status_code)
+      if notify_with_delayed_job?
+        # don't pass in request as it contains not-easily-serializable stuff
+        Juggler::ExceptionNotifier.send_later(:deliver_exception_notification,
+                                              exception,
+                                              proc_name,
+                                              exception.backtrace,
+                                              status_code,
+                                              request_data)
+      else
+        Juggler::ExceptionNotifier.deliver_exception_notification(exception,
+                                                         proc_name,
+                                                         exception.backtrace,
+                                                         status_code,
+                                                         request_data,
+                                                         request)
+      end
+    end
+
+    log_exception(exception, request_data, status_code)
+
+    if render_errors
+
+      puts "\n\nTODO: rendering error"
+
+      render_error_template(exception, status_code)
+
+    else
+      puts "\n\nTODO: NOT rendering error"
+
+    end
+  end
+
+
+  # determine if the app is configured to notify for the given exception or
+  # status code
+  #-----------------------------------------------------------------------------
+  def notify_on_exception?(exception, status_code = nil)
+    # first determine if we're configured to notify given the context of the
+    # exception
+    if self.respond_to?(:local_request?)
+      if (local_request? && config[:notify_on_local_error]) ||
+          (!local_request? && config[:notify_on_public_error])
+        notify = true
+      else
+        notify = false
+      end
+    else
+      notify = config[:notify_on_background_error]
+    end
+
+    # now if config says notify in this case, check if we're configured to
+    # notify for this exception or this status code
+    return notify &&
+      (config[:notify_exception_classes].include?(exception.class) ||
+       config[:notify_status_codes].include?(status_code))
+  end
+
+  # determine if email should be sent with delayed job or not (delayed job
+  # must be installed and config set to use delayed job
+  #-----------------------------------------------------------------------------
+  def notify_with_delayed_job?
+    use_dj = false
+
+    if self.is_a?(ActionController::Base)
+      if config[:delayed_job_for_controller_errors] &&
+          ExceptionNotifier.respond_to?(:send_later)
+        use_dj = true
+      else
+        use_dj = false
+      end
+    else
+      if config[:delayed_job_for_non_controller_errors] &&
+          ExceptionNotifier.respond_to?(:send_later)
+        use_dj = true
+      else
+        use_dj = false
+      end
+    end
+
+    return use_dj
+  end
+
+
+  # TODO: add any non-controller method as module_methods as well...
+
+
+
 end

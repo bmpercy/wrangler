@@ -5,83 +5,51 @@ require 'juggler/exception_notifier.rb'
 module Juggler
 
   def self.included(base)
-    base.extend(ClassMethods)
 
-    # TODO: are these useful accessor methods, or shoudl then just be 
-    # accessed via the config?
-
-    base.cattr_accessor :error_class_status_codes
-    base.error_class_status_codes = Juggler::ExceptionHandler.config[:error_class_status_codes]
-
-    base.cattr_accessor :http_status_codes
-    base.http_status_codes = Juggler::ExceptionHandler.config[:http_status_codes]
-
-   
+    # only add in the controller-specific methods if the including class is one
     if class_has_ancestor?(base, ActionController::Base)
-      unless Juggler::ExceptionHandler.config[:handle_public_errors]
 
-        puts "\n\nTODO: removing rescue_action_in_public from CMs"
+      # check the global configuration regarding exception handling. if config
+      # says not to handle exceptions in public or locally, then fall back on
+      # default exception handling without Juggler
+#      unless Juggler::ExceptionHandler.config[:handle_public_errors]
 
-        ControllerMethods.send(:remove_method, :rescue_action_in_public)
+#        puts "\n\nTODO: removing rescue_action_in_public from CMs"
 
-        puts "TODO: is the method gone?: #{ControllerMethods.methods.include?(:rescue_action_in_public) ? 'FALSE' : 'TRUE'}"
-      else
-        puts "\n\nTODO: NOT removing rescue_action_in_public from CMs"
-      end
+#        ControllerMethods.send(:remove_method, :rescue_action_in_public)
 
-      unless Juggler::ExceptionHandler.config[:handle_local_errors]
-        puts "\n\nTODO: removing rescue_action_locally from CMs"
+#        puts "TODO: is the method gone?: #{ControllerMethods.instance_methods.include?('rescue_action_in_public') ? 'FALSE' : 'TRUE'}"
+#      else
+#        puts "\n\nTODO: NOT removing rescue_action_in_public from CMs"
+#      end
 
-        ControllerMethods.send(:remove_method, :rescue_action_locally)
-      else
-        puts "\n\nTODO: NOT removing rescue_action_locally from CMs"
-      end
+#      unless Juggler::ExceptionHandler.config[:handle_local_errors]
+#        puts "\n\nTODO: removing rescue_action_locally from CMs"
+#        puts "TODO: is the method there?: #{ControllerMethods.instance_methods.include?('rescue_action_locally') ? 'TRUE' : 'FALSE'}"
+#        puts "TODO: all methods: #{ControllerMethods.instance_methods.sort.to_yaml}"
+
+#        ControllerMethods.send(:remove_method, :rescue_action_locally)
+#        end
+
+#        ControllerMethods.send(:remove_method, :rescue_action_locally)
+#      else
+#        puts "\n\nTODO: NOT removing rescue_action_locally from CMs"
+#      end
+
+      puts "\n\nTODO: BEFORE does base contain rescue_action_in_public?: #{base.instance_methods.include?('rescue_action_in_public') ? 'TRUE' : 'FALSE'}"
+      puts "\n\nTODO: BEFORE does base contain rescue_action_locally?: #{base.instance_methods.include?('rescue_action_locally') ? 'TRUE' : 'FALSE'}"
 
       base.send(:include, ControllerMethods)
+
+      puts "\n\nTODO: AFTER does base contain rescue_action_in_public?: #{base.instance_methods.include?('rescue_action_in_public') ? 'TRUE' : 'FALSE'}"
+      puts "\n\nTODO: AFTER does base contain rescue_action_locally?: #{base.instance_methods.include?('rescue_action_locally') ? 'TRUE' : 'FALSE'}"
     end
 
     puts "\n\nTODO: juggler has been included into #{base.name}!\n\n"
   end
 
-  # TODO: decide what needs to be:
-  # a) class methods
-  # b) instance methods (non-controller) -- kinda hope there are none of these...
-  # c) controller (instance) methods (don't bother with class methods as we'll
-  #    only ever interact with a controller with an instance in hand
-
-  # methods to be class methods on the class including the Juggler module
-  #-----------------------------------------------------------------------------
-  module ClassMethods
-
-    # translate the exception class to an http status code, using default
-    # code (set in config) if the exception class isn't excplicitly mapped
-    # to a status code in config
-    #---------------------------------------------------------------------------
-    def status_code_for_exception(exception)
-      error_class_status_codes[exception.class] || error_class_status_codes[:default]
-    end
-
-    # determine if the request env param should be ommitted from the request
-    # data object, as specified in config (either for aesthetic reasons or
-    # because the param won't serialize well).
-    #---------------------------------------------------------------------------
-    def skip_request_env?(request_param)
-      skip_env = false
-      Juggler::ExceptionHandler.config[:request_env_to_skip].each do |pattern|
-        if (pattern.is_a?(String) && pattern == request_param) ||
-           (pattern.is_a?(Regexp) && pattern =~ request_param)
-          skip_env = true
-          break
-        end
-      end
-
-      return skip_env
-    end
-
-  end # end ClassMethods sub-module
-
   # module of instance methods to be added to the class including Juggler
-  # if the including class is a rails controller class
+  # only if the including class is a rails controller class
   #-----------------------------------------------------------------------------
   module ControllerMethods
 
@@ -91,7 +59,8 @@ module Juggler
     def rescue_with_handler(exception)
       to_return = super
       if to_return
-        handle_exception(exception, request, false)
+        handle_exception(exception, :request => request,
+                                    :render_errors => false)
       end
       to_return
     end
@@ -100,7 +69,7 @@ module Juggler
     # only activated if configured to do so. these are the methods that rails
     # looks for to override default behavior
     #---------------------------------------------------------------------------
-#    if Juggler::ExceptionHandler.config[:handle_public_errors]
+    if Juggler::ExceptionHandler.config[:handle_public_errors]
 
       puts "\n\nTODO: adding in the public handler!\n\n"
 
@@ -108,16 +77,17 @@ module Juggler
 
         puts "\n\nTODO: rescuing in public!\n\n"
 
-        handle_exception(exception, request, true)
+        handle_exception(exception, :request => request,
+                                    :render_errors => true)
       end
 
-#    else
+    else
 
-#      puts "\n\nTODO: NOT adding in the local handler!\n\n"
+      puts "\n\nTODO: NOT adding in the local handler!\n\n"
 
 
-#    end
-#    if Juggler::ExceptionHandler.config[:handle_local_errors]
+    end
+    if Juggler::ExceptionHandler.config[:handle_local_errors]
 
       puts "\n\nTODO: adding in the local handler!\n\n"
 
@@ -125,11 +95,12 @@ module Juggler
 
         puts "\n\nTODO: rescuing locally!\n\n"
 
-        handle_exception(exception, request, true)
+        handle_exception(exception, :request => request,
+                                    :render_errors => true)
       end
-#    else
-#      puts "\n\nTODO: NOT adding in the local handler!\n\n"
-#    end
+    else
+      puts "\n\nTODO: NOT adding in the local handler!\n\n"
+    end
 
     # extract a hash of relevant (and serializable) parameters from a request
     #---------------------------------------------------------------------------
@@ -138,7 +109,7 @@ module Juggler
 
       request_data = {}
       request.env.each_pair do |k,v|
-        next if self.class.skip_request_env?(k)
+        next if skip_request_env?(k)
 
         if self.respond_to?(:filter_parameters)
           request_data.merge! self.send(:filter_parameters, k => v)
@@ -167,6 +138,23 @@ module Juggler
       return request_data
     end
 
+    # determine if the request env param should be ommitted from the request
+    # data object, as specified in config (either for aesthetic reasons or
+    # because the param won't serialize well).
+    #---------------------------------------------------------------------------
+    def skip_request_env?(request_param)
+      skip_env = false
+      Juggler::ExceptionHandler.config[:request_env_to_skip].each do |pattern|
+        if (pattern.is_a?(String) && pattern == request_param) ||
+           (pattern.is_a?(Regexp) && pattern =~ request_param)
+          skip_env = true
+          break
+        end
+      end
+
+      return skip_env
+    end
+
     # select the proper file to render and do so
     #---------------------------------------------------------------------------
     def render_error_template(exception, status_code)
@@ -175,9 +163,25 @@ module Juggler
       # if that fails, put a hardcoded path here and make sure that file is
       # in the gem
 
-      file_path = get_view_path_for_exception(exception, status_code) or
-        raise "Could not find template for exception #{exception.class} " +
-        "#{exception.message}) or status code #{status_code}"
+      file_path = get_view_path_for_exception(exception, status_code)
+      
+      # if that didn't work, fall back on configured app-specific default
+      if file_path.blank? || !File.exists?(file_path)
+        file_path = config[:default_error_template]
+
+        log_error(["Could not find an error template in the usual places " +
+                  "for exception #{exception.class}, status code " +
+                  "#{status_code}.",
+                  "Trying to default to app-specific default: '#{file_path}'"])
+      end
+
+      # as a last resort, just render the gem's 500 error
+      if file_path.blank? || !File.exists?(file_path)
+        file_path = config[:absolute_last_resort_default_error_template]
+
+        log_error("Still no template found. Using gem default of " +
+                  file_path)
+      end
 
       puts "\n\nTODO: going to render error using #{file_path}"
 
@@ -185,6 +189,8 @@ module Juggler
       render :file => file_path,
              :status => status_code
     end
+
+    # TODO: put this in the README as well
 
     # select the appropriate view path for the exception/status code
     #
@@ -242,6 +248,9 @@ module Juggler
       format_extension_pattern = ".#{response_format || ''}*"
 
       if template_mappings
+
+        # search for direct mapping from exception name to error template
+
         if template_mappings[exception_class]
           error_file = template_mappings[exception_class]
           puts "\n\nTODO: found direct exception to template mapping!: '#{error_file}'"
@@ -253,7 +262,7 @@ module Juggler
                     "but error file was not found")
         end
 
-        #---
+        # search for mapping from an ancestor class to error template
 
         ancestor_class =
           Juggler::class_has_ancestor?(exception_class.superclass,
@@ -272,7 +281,7 @@ module Juggler
 
       end # end if template_mappings
 
-      #---
+      # search for a file named after the exception in one of the search dirs
 
       search_paths = [ config[:error_template_dir],
                        File.join(RAILS_ROOT, 'public'),
@@ -288,7 +297,7 @@ module Juggler
 
       return file_path if file_path
 
-      #---
+      # search for a file named after the error status code in search dirs
 
       status_code_pattern = "#{status_code}#{format_extension_pattern}"
       file_path = find_file_matching_pattern(search_paths, status_code_pattern)
@@ -297,8 +306,7 @@ module Juggler
 
       return file_path if file_path
 
-
-      #---
+      # search for a file named after ancestors of the exception in search dirs
 
       # look through exception's entire ancenstry to see if there's a matching
       # template in the search directories
@@ -321,157 +329,6 @@ module Juggler
       return nil
     end
 
-    # TODO: should this be in the helper file?
-    # TODO: comment
-    # pattern expressed in cmd line wildcards...like "*.rb" or "foo.?"...
-    #---------------------------------------------------------------------------
-    def find_file_matching_pattern(search_dirs, pattern)
-      search_dirs.each do |d|
-
-        puts "TODO: trying to find #{pattern} in #{d}"
-
-        matches = Dir.glob(File.join(d, pattern))
-        return matches.first if matches.size > 0
-      end
-      return nil
-    end
-
   end # end ControllerMethods
-
-  # the main exception-handling method. decides whether to notify or not,
-  # whether to render an error page or not, and to make it happen
-  #-----------------------------------------------------------------------------
-  def handle_exception(exception, request = nil, render_errors = false)
-    status_code = self.class.status_code_for_exception(exception)
-    request_data = request_data_from_request(request) unless request.nil?
-
-
-    puts "\n\nTODO: status code is: #{status_code}"
-#    puts "TODO: request data:"
-#    puts request_data.to_yaml
-#    puts "\n\n"
-
-    if notify_on_exception?(exception, status_code)
-      if notify_with_delayed_job?
-        # don't pass in request as it contains not-easily-serializable stuff
-        Juggler::ExceptionNotifier.send_later(:deliver_exception_notification,
-                                              exception,
-                                              exception.backtrace,
-                                              status_code,
-                                              request_data)
-      else
-        Juggler::ExceptionNotifier.deliver_exception_notification(exception,
-                                                         exception.backtrace,
-                                                         status_code,
-                                                         request_data,
-                                                         request)
-      end
-    end
-
-    log_exception(exception, request_data, status_code)
-
-    if render_errors
-
-      puts "\n\nTODO: rendering error"
-
-      render_error_template(exception, status_code)
-
-    else
-      puts "\n\nTODO: NOT rendering error"
-
-    end
-  end
-
-
-  # determine if the app is configured to notify for the given exception or
-  # status code
-  #-----------------------------------------------------------------------------
-  def notify_on_exception?(exception, status_code)
-    # first determine if we're configured to notify given the context of the
-    # exception
-    if self.respond_to?(:local_request?)
-      if (local_request? && config[:notify_on_local_error]) ||
-          (!local_request? && config[:notify_on_public_error])
-        notify = true
-      else
-        notify = false
-      end
-    else
-      notify = config[:notify_on_background_error]
-    end
-
-    # now if config says notify in this case, check if we're configured to
-    # notify for this exception or this status code
-    return notify &&
-      (config[:notify_exception_classes].include?(exception.class) ||
-       config[:notify_status_codes].include?(status_code))
-  end
-
-  # determine if email should be sent with delayed job or not (delayed job
-  # must be installed and config set to use delayed job
-  #-----------------------------------------------------------------------------
-  def notify_with_delayed_job?
-    use_dj = false
-
-    if self.is_a?(ActionController::Base)
-      if config[:delayed_job_for_controller_errors] &&
-          ExceptionNotifier.respond_to?(:send_later)
-        use_dj = true
-      else
-        use_dj = false
-      end
-    else
-      if config[:delayed_job_for_non_controller_errors] &&
-          ExceptionNotifier.respond_to?(:send_later)
-        use_dj = true
-      else
-        use_dj = false
-      end
-    end
-
-    return use_dj
-  end
-
-  # log the exception using logger if available. if object does not have a
-  # logger, will just puts()
-  #-----------------------------------------------------------------------------
-  def log_exception(exception, request_data = nil, status_code = nil)
-    msgs = []
-
-    msgs << "An exception was caught (#{exception.class.name}):"
-    msgs << exception.message
-    unless request_data.blank?
-      msgs <<  "Request params were:"
-      msgs <<  request_data.inspect
-    end
-    unless status_code.blank?
-      msgs <<  "Handling with status code: #{status_code}"
-    end
-    unless exception.backtrace.blank?
-      msgs <<  exception.backtrace.join("\n  ")
-    end
-
-    log_error msgs
-  end
-
-  def log_error(msgs)
-    unless msgs.is_a?(Array)
-      msgs = [msgs]
-    end
-
-    msgs.each do |m|
-      if respond_to?(:logger)
-        logger.error m
-      else
-        puts m
-      end
-    end
-  end
-
-  # shorthand access to the exception handling config
-  #-----------------------------------------------------------------------------
-  def config
-    Juggler::ExceptionHandler.config
-  end
 
 end # end Juggler module
