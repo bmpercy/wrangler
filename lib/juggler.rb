@@ -74,8 +74,8 @@ module Juggler
       to_return = super
       if to_return &&
            (
-             (is_local? && Juggler::ExceptionHandler.config[:handle_local_errors]) ||
-             (!is_local? && Juggler::ExceptionHandler.config[:handle_public_errors])
+             (local_request? && Juggler::ExceptionHandler.config[:handle_local_errors]) ||
+             (!local_request? && Juggler::ExceptionHandler.config[:handle_public_errors])
            )
 
         handle_exception(exception, :request => request,
