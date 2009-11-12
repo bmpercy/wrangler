@@ -1,0 +1,65 @@
+= Juggler
+
+== NOTE/DISCLAIMER
+This gem is almost completely inspired by/ripped off the exception_notification
+plugin/gem, but had to hack too much to get things to work with delayed_job
+that I just decided to start from scratch. You'll see that much has been
+borrowed however, so I owe a huge debt to the originals (exception_notification
+[http://github.com/rails/exception_notification] and
+super_exception_notification [http://github.com/pboling/exception_notification])
+to help me recreate the Rails hacking.
+
+If you don't really care about using delayed_job for your emailing, consider
+going back to the originals, as they're likely better maintained.... ;)
+
+== Overview:
+A gem for handling exceptions in a Rails application/environment. 
+
+Some highlights:
+* Allows for rendering error pages and sending email notifications in case of
+errors.
+* Allows for lots of configuring of which pages to show, whether to email or not.
+* Allows for asynchronous emailing through delayed_job if available, but works
+fine even if delayed_job not installed (email will be synchronous however)
+* Will honor filter_parameters set in the controller including the Juggler
+module (except if the parameters are in the URL for GETs) when logging and
+emailing application state at the time of the exception
+
+== Quickstart
+
+== Configuration
+
+== Search algorithm for error templates (given an exception and a status_code):
+# if there is an explicit mapping from the exception to an error page in
+:error_class_xxx_templates, use that
+# if there is a mapping in :error_class_templates for which the exception
+returns true to an is_a? call, use that
+# if there is a file/template corresponding to the exception name
+(underscorified) in one of the following locations, use that:
+** config[:error_template_dir]/
+** RAILS_ROOT/public/
+** JUGGLER_ROOT/rails/app/views/juggler/
+# if there is a file/template corresponding to the status code
+(e.g. named ###.html.erb where ### is the status code) in one of the following
+locations, use that:
+** config[:error_template_dir]/
+** RAILS_ROOT/public/
+** JUGGLER_ROOT/rails/app/views/juggler/
+# if there is a file/template corresponding to a parent class name of the
+exception (underscorified) one of the following locations, use that:
+** config[:error_template_dir]/
+** RAILS_ROOT/public/
+** JUGGLER_ROOT/rails/app/views/juggler/
+
+== TODO:
+* quickstart (bare minimum config to get started -- initializer)
+* how to configure handler (initializer)
+* how to configure notifier (initializer
+* using within a controller
+* using within a random class (with an instance)
+* using totally 'statically'
+* using notify_on_error(&block)
+* all of the config values and their defaults
+* maintaining the gem:
+** using jeweler (so how to build the gem)
+** anything else?

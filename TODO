@@ -1,0 +1,25 @@
+This is a collection of things that could/should be worked on:
+
+== Robustness:
+* in juggler.rb : render_error_template(), if we fail to find a template for the
+exception/status code, we just log that fact right now. this is probably worth
+a notification in itself (that a template is missing or config is not set up
+properly)...so send an email if an appropriate template cannot be found.
+
+== Cleanup:
+* (Potentially security?) copy what exception_notification does and sanitize
+the backtrace before stuffing it into email...from what i could tell from a
+quick look, it seemed like it was just cleaning up the stack trace, substituting
+[RAILS ROOT] for the path to the rails app (which should make it shorter, but
+maybe also to hide the location of the app?)
+
+== Configuration/flexibility:
+* allow for a hash to map status_codes to arbitrary templates explicitly instead
+of relying on finding files named after the status code. currently have
+implemented the ability to map exceptions to arbitrary templates, so the
+pattern/approach has been established.
+* allowing for separate exception handler (and notifier?) configuration for
+different controllers/classes. probably involves converting the ExceptionHandler
+class to being instantiated and have each class that includes the Juggler
+module hold onto that instance (maybe have to move the notifier config back to
+the ExceptionHandler class where it used to be... ;)  )
