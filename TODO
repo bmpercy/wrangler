@@ -23,3 +23,7 @@ different controllers/classes. probably involves converting the ExceptionHandler
 class to being instantiated and have each class that includes the Juggler
 module hold onto that instance (maybe have to move the notifier config back to
 the ExceptionHandler class where it used to be... ;)  )
+* allow configuring which sections of the email are included (e.g. can leave
+out the stacktrace or the request sections...)
+* allow custom email views to override the Juggler email view (e.g. allowing
+html, additional data, formatting differences...)

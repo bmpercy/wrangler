@@ -24,12 +24,167 @@ fine even if delayed_job not installed (email will be synchronous however)
 * Will honor filter_parameters set in the controller including the Juggler
 module (except if the parameters are in the URL for GETs) when logging and
 emailing application state at the time of the exception
+* Allows email notification on exceptions thrown totally outside Controller
+context, e.g. in a script run (with rails environment) in a cronjob or
+delayed_job
 
 == Quickstart
+=== Bare Minimum
+There are a lot of defaults set, so getting started should be pretty easy. In
+fact, if you don't want any email notifications, you basically just need to
+include the Juggler module in your controller:
+    # application_controller.rb
+    class ApplicationController < ActionController::Base
+      include Juggler
+
+      ...
+    end
+
+=== Enabling email notifications
+Email notifications are configured to be sent with the default configuration,
+but you'll need to specify from and to addresses for emails to actually be sent.
+So that brings us to the configuration of Juggler. Recommended: just create a
+new initializer file (create a juggler.rb (or whatever you want to name the file)
+in  RAILS_ROOT/config/initializers/juggler.rb). In it, add the following:
+
+  Juggler::ExceptionNotifier.configure do |notifier_config|
+    notifier_config.merge! :from_address => 'monitor@umamibud.com',
+                           :recipient_addresses => ['u-ops-monitor@umamibud.com']
+  end
+
+And, if you haven't already configured ActionMailer to send emails, you'll need
+to do that (e.g. setting ActionMailer::Base.smtp_settings), and even after you
+have, you may want to change some settings in order to send from a different
+account from the one you may use to email your users (e.g. change the :user_name
+for smtp_settings):
+
+  Juggler::ExceptionNotifier.smtp_settings.merge! :user_name => 'notifier@mydomain.com'
+
+(Recommend just putting that in the same juggler.rb initializer you created above)
+
+For more info on smtp_settings, see ActionMailer (http://am.rubyonrails.org/)
 
 == Configuration
+There are two different classes that receive configuration, ExceptionHandler and
+ExceptionNotifier.
+
+ExceptionHandler stores configurations about what to do about exceptions (whether to
+handle them, email them, which error templates to render for each exception...).
+
+ExceptionNotifier handles the sending of emails when exceptions occur, so
+stores configurations about where to send the emails.
+
+You override defaults on each using the same syntax (as seen above) by calling the
+configure() method on the class and using the config hash that is yielded to
+set your configurations. See the method documentation for the configure() methods
+themselves, but here's the basic idea:
+
+     Juggler::ExceptionHandler.configure do |handler_config|
+       handler_config[:key1] = value1
+       handler_config[:key2] = value2
+       handler_config[:key_for_a_hash].merge! :subkey => value
+       handler_config[:key_for_an_array] << another_value
+     end
+    
+     OR
+    
+     Juggler::ExceptionHandler.configure do |handler_config|
+       handler_config.merge! :key1 => value1,
+                             :key2 => value2,
+       handler_config[:key_for_a_hash].merge! :subkey => value
+       handler_config[:key_for_an_array] << another_value
+     end
+
+(same with Juggler::ExceptionNotifier, except different classname)
+
+Most configurations are single values (e.g. nums or strings),
+but some are hashes or arrays. You can either overwrite the hashes/arrays, or
+selectively delete, or just append. Recommend just appending to the defaults
+in most cases, but if you know what you're doing, you can do whatever you like!
+
+Here is the full set of configuration values for both classes, as well as their
+default values (pasted in from the classes, so you can check the code directly
+to make sure you've got the latest! :) ):
+
+   ####################
+   # ExceptionHandler:
+   ####################
+
+      :app_name => '',
+      :handle_local_errors => false,
+      :handle_public_errors => true,
+      # send email for local reqeusts. ignored if :handle_local_errors false
+      :notify_on_local_error => false,
+      # send email for public requests. ignored if :handle_public_errors false
+      :notify_on_public_error => true,
+      # send email for exceptions caught outside of a controller context
+      :notify_on_background_error => true,
+      # configure whether to send emails synchronously or asynchronously
+      # using delayed_job (these can be true even if delayed job is not
+      # installed, in which case, will just send emails synchronously anyway)
+      :delayed_job_for_controller_errors => false,
+      :delayed_job_for_non_controller_errors => false,
+      # mappings from exception classes to http status codes (see above)
+      # add/remove from this list as desired in environment configuration
+      :error_class_status_codes => Juggler::codes_for_exception_classes,
+      # explicitly indicate which exceptions to send email notifications for
+      :notify_exception_classes => %w(),
+      # indicate which http status codes should result in email notification
+      :notify_status_codes => %w( 405 500 503 ),
+      # where to look for app-specific error page templates (ones you create
+      # yourself, for example...there are some defaults in this gem you can
+      # use as well...and that are configured already by default)
+      :error_template_dir => File.join(RAILS_ROOT, 'app', 'views', 'error'),
+      # excplicit mappings from exception class to arbitrary error page
+      # templates, different set for html and js responses (Juggler determines
+      # which to use automatically, so you can have an entry in both
+      # hashes for the same error class)
+      :error_class_html_templates => {},
+      :error_class_js_templates => {},
+      # you can specify a fallback failsafe error template to render if
+      # no appropriate template is found in the usual places (you shouldn't
+      # rely on this, and error messages will be logged if this template is
+      # used). note: there's an even more failsafe template included in the
+      # gem (absolute_last_resort...) below, but DON'T CHANGE IT!!!
+      :default_error_template => '',
+      # these filter out any HTTP params that are undesired
+      :request_env_to_skip => [ /^rack\./,
+                                "action_controller.rescue.request",
+                                "action_controller.rescue.response" ],
+      # mapping from exception classes to templates (if desired), express
+      # in absolute paths. use wildcards like on cmd line (glob-like), NOT
+      # regexp-style
+
+      # just DON'T change this! this is the error template of last resort!
+      :absolute_last_resort_default_error_template =>
+        File.join(JUGGLER_ROOT,'rails','app','views','juggler','500.html')
+
+   #####################
+   # ExceptionNotifier:
+   #####################
+
+      # who the emails will be coming from. if nil or missing or empty string,
+      # effectively disables email notification
+      :from_address => '',
+      # array of addresses that the emails will be sent to. if nil or missing
+      # or empty array, effectively disables email notification.
+      :recipient_addresses => [],
+      # what will show up at the beginning of the subject line for each email
+      # sent note: will be preceded by "[<app_name (if any)>...", where app_name
+      # is the :app_name config value from ExceptionHandler (or explicit
+      # proc_name given to notify_on_error() method)
+      :subject_prefix => "#{(defined?(Rails) ? Rails.env : RAILS_ENV).capitalize} ERROR",
+      # can use this to define app-specific mail views using the same data
+      # made available in exception_notification()
+      :mailer_template_root => File.join(JUGGLER_ROOT, 'views')
 
 == Search algorithm for error templates (given an exception and a status_code):
+When trying to find an appropriate error page template to render, Juggler
+goes through several different attempts to locate an appropriate template,
+beginning with templates you've explicitly associated with the exception class
+or status code that has arisen...and on through to assuming default file naming
+conventions and finally failsafe default templates.
+
 # if there is an explicit mapping from the exception to an error page in
 :error_class_xxx_templates, use that
 # if there is a mapping in :error_class_templates for which the exception
@@ -50,16 +205,43 @@ exception (underscorified) one of the following locations, use that:
 ** config[:error_template_dir]/
 ** RAILS_ROOT/public/
 ** JUGGLER_ROOT/rails/app/views/juggler/
+# :default_error_template
+# :absolute_last_resort_default_error_template
 
-== TODO:
-* quickstart (bare minimum config to get started -- initializer)
-* how to configure handler (initializer)
-* how to configure notifier (initializer
-* using within a controller
-* using within a random class (with an instance)
-* using totally 'statically'
-* using notify_on_error(&block)
-* all of the config values and their defaults
-* maintaining the gem:
-** using jeweler (so how to build the gem)
-** anything else?
+== Using outside a Controller:
+You can still use Juggler outside the context of a Controller class. If you'll
+be running within the context of an object instance, you can just include Juggler
+in the object's class. If you'll be running 'static' code, you can refer to
+relevant methods via the Juggler module. Note that in both cases, you'll be
+calling the notify_on_error() method. Also note that the notify_on_error()
+method will re-raise the exception that occurred in the block, so you may want
+to begin/rescue/end around the notify_on_error() method call
+
+using in an object instance:
+
+   class MyClass
+     include Juggler
+
+     def my_error_method; raise "error!"; end
+     
+     def call_a_method
+       notify_on_error { my_error_method }
+     rescue => e
+       exit
+     end
+   end
+
+using 'statically':
+
+   Juggler::notify_on_error { run_some_method_that_might_raise_exceptions }
+
+== Maintaining the Juggler gem
+Should be pretty straightforward. Note that we're using jeweler, so the .gemspec
+isn't included in the git repos; it gets generated dynamically from the settings
+in Rakefile. 
+
+To build:
+
+     cd .../juggler
+     rake gemspec
+     rake build

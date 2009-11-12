@@ -11,12 +11,19 @@ module Juggler
   class ExceptionNotifier < ActionMailer::Base
     # the default configuration
     @@config ||= {
+      # who the emails will be coming from. if nil or missing or empty string,
+      # effectively disables email notification
       :from_address => '',
+      # array of addresses that the emails will be sent to. if nil or missing
+      # or empty array, effectively disables email notification.
       :recipient_addresses => [],
-      # note: will be preceded by proc_name (if any)
+      # what will show up at the beginning of the subject line for each email
+      # sent note: will be preceded by "[<app_name (if any)>...", where app_name
+      # is the :app_name config value from ExceptionHandler (or explicit
+      # proc_name given to notify_on_error() method)
       :subject_prefix => "#{(defined?(Rails) ? Rails.env : RAILS_ENV).capitalize} ERROR",
-      # can define app-specific mail views using the data available in
-      # exception_notification()
+      # can use this to define app-specific mail views using the same data
+      # made available in exception_notification()
       :mailer_template_root => File.join(JUGGLER_ROOT, 'views')
     }
 
@@ -53,6 +60,15 @@ module Juggler
                                request_data = nil,
                                request = nil)
 
+      # don't try to send email if there are no from or recipient addresses
+      if config[:from_address].nil? ||
+         config[:from_address].empty? ||
+         config[:recipient_addresses].nil? ||
+         config[:recipient_addresses].empty?
+
+        return nil
+      end
+
       ensure_session_loaded(request)
 
       # NOTE: be very careful pulling data out of request in the view...it is
@@ -68,7 +84,6 @@ module Juggler
         }
 
       body_hash.merge! extract_data_from_request_data(request_data)
-
       from         config[:from_address]
       recipients   config[:recipient_addresses]
       subject      "[#{proc_name + (proc_name ? ' ' : '')}" +

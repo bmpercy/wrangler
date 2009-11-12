@@ -49,23 +49,40 @@ module Juggler
       :app_name => '',
       :handle_local_errors => false,
       :handle_public_errors => true,
-      # ignored if :handle_local_errors is false
+      # send email for local reqeusts. ignored if :handle_local_errors false
       :notify_on_local_error => false,
-      # ignored if :handle_public_errors is false
+      # send email for public requests. ignored if :handle_public_errors false
       :notify_on_public_error => true,
+      # send email for exceptions caught outside of a controller context
       :notify_on_background_error => true,
+      # configure whether to send emails synchronously or asynchronously
+      # using delayed_job (these can be true even if delayed job is not
+      # installed, in which case, will just send emails synchronously anyway)
       :delayed_job_for_controller_errors => false,
       :delayed_job_for_non_controller_errors => false,
-  
+      # mappings from exception classes to http status codes (see above)
       # add/remove from this list as desired in environment configuration
       :error_class_status_codes => Juggler::codes_for_exception_classes,
+      # explicitly indicate which exceptions to send email notifications for
       :notify_exception_classes => %w(),
+      # indicate which http status codes should result in email notification
       :notify_status_codes => %w( 405 500 503 ),
+      # where to look for app-specific error page templates (ones you create
+      # yourself, for example...there are some defaults in this gem you can
+      # use as well...and that are configured already by default)
       :error_template_dir => File.join(RAILS_ROOT, 'app', 'views', 'error'),
+      # excplicit mappings from exception class to arbitrary error page
+      # templates, different set for html and js responses (Juggler determines
+      # which to use automatically, so you can have an entry in both
+      # hashes for the same error class)
       :error_class_html_templates => {},
       :error_class_js_templates => {},
+      # you can specify a fallback failsafe error template to render if
+      # no appropriate template is found in the usual places (you shouldn't
+      # rely on this, and error messages will be logged if this template is
+      # used). note: there's an even more failsafe template included in the
+      # gem (absolute_last_resort...) below, but DON'T CHANGE IT!!!
       :default_error_template => '',
-      :codes_for_exception_classes => Juggler::codes_for_exception_classes,
       # these filter out any HTTP params that are undesired
       :request_env_to_skip => [ /^rack\./,
                                 "action_controller.rescue.request",
@@ -74,7 +91,7 @@ module Juggler
       # in absolute paths. use wildcards like on cmd line (glob-like), NOT
       # regexp-style
 
-      # just DON'T change this!
+      # just DON'T change this! this is the error template of last resort!
       :absolute_last_resort_default_error_template =>
         File.join(JUGGLER_ROOT,'rails','app','views','juggler','500.html')
     }
