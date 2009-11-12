@@ -8,8 +8,59 @@ module Juggler
     # only add in the controller-specific methods if the including class is one
     if class_has_ancestor?(base, ActionController::Base)
       base.send(:include, ControllerMethods)
+
+      # conditionally including these methods (each wrapped in a separate
+      # module) based on the configuration of whether to handle exceptions in
+      # the given environment or not. this allows the default implementation
+      # of the two rescue methods to run when Juggler-based exception handling
+      # is disabled.
+
+      if Juggler::ExceptionHandler.config[:handle_public_errors]
+        Rails.logger.info "Configuring #{base.name} with Juggler's rescue_action_in_public"
+        base.send(:include, PublicControllerMethods)
+      else
+        Rails.logger.info "NOT Configuring #{base.name} with Juggler's rescue_action_in_public"
+      end
+
+      if Juggler::ExceptionHandler.config[:handle_local_errors]
+        Rails.logger.info "Configuring #{base.name} with Juggler's rescue_action_locally"
+        base.send(:include, LocalControllerMethods)
+      else
+        Rails.logger.info "NOT configuring #{base.name} with Juggler's rescue_action_locally"
+      end
     end
   end
+
+
+  # methods to only be included into a controller if Juggler is configured to
+  # handle exceptions for public reqeusts. (Conditionally included into
+  # controllers in the Juggler::included() method).
+  #-----------------------------------------------------------------------------
+  module PublicControllerMethods
+    # override default behavior and let Juggler handle the exception for
+    # public (non-local) requests.
+    #---------------------------------------------------------------------------
+    def rescue_action_in_public(exception)
+      handle_exception(exception, :request => request,
+                       :render_errors => true)
+    end
+  end
+
+
+  # methods to only be included into a controller if Juggler is configured to
+  # handle exceptions for local reqeusts. (Conditionally included into
+  # controllers in the Juggler::included() method).
+  #-----------------------------------------------------------------------------
+  module LocalControllerMethods
+    # override default behavior and let Juggler handle the exception for
+    # local requests.
+    #---------------------------------------------------------------------------
+    def rescue_action_locally(exception)
+      handle_exception(exception, :request => request,
+                       :render_errors => true)
+    end
+  end
+
 
   # module of instance methods to be added to the class including Juggler
   # only if the including class is a rails controller class
@@ -21,39 +72,16 @@ module Juggler
     #---------------------------------------------------------------------------
     def rescue_with_handler(exception)
       to_return = super
-      if to_return
+      if to_return &&
+           (
+             (is_local? && Juggler::ExceptionHandler.config[:handle_local_errors]) ||
+             (!is_local? && Juggler::ExceptionHandler.config[:handle_public_errors])
+           )
+
         handle_exception(exception, :request => request,
                                     :render_errors => false)
       end
       to_return
-    end
-
-
-    # conditionally adding these methods so that the exception handling is
-    # only activated if configured to do so. these are the methods that rails
-    # looks for to override default behavior
-    #---------------------------------------------------------------------------
-    if Juggler::ExceptionHandler.config[:handle_public_errors]
-      puts("Controllers will be configured to handle exceptions " +
-           "in public with Juggler")
-      def rescue_action_in_public(exception)
-        handle_exception(exception, :request => request,
-                                    :render_errors => true)
-      end
-    else
-      puts("Controllers will NOT be configured to handle exceptions " +
-           "in public with Juggler")
-    end
-    if Juggler::ExceptionHandler.config[:handle_local_errors]
-      puts("Controllers will be configured to handle exceptions " +
-           "locally with Juggler")
-      def rescue_action_locally(exception)
-        handle_exception(exception, :request => request,
-                                    :render_errors => true)
-      end
-    else
-      puts("Controllers will NOT be configured to handle exceptions " +
-           "locally with Juggler")
     end
 
 
@@ -91,6 +119,7 @@ module Juggler
       return request_data
     end
 
+
     # determine if the request env param should be ommitted from the request
     # data object, as specified in config (either for aesthetic reasons or
     # because the param won't serialize well).
@@ -107,6 +136,7 @@ module Juggler
 
       return skip_env
     end
+
 
     # select the proper file to render and do so. if the usual places don't
     # turn up an appropriate template (see README), then fall back on
@@ -139,6 +169,7 @@ module Juggler
       render :file => file_path,
              :status => status_code
     end
+
 
     # select the appropriate view path for the exception/status code. see
     # README or the code for the different attempts that are made to find
@@ -248,6 +279,6 @@ module Juggler
       return nil
     end
 
-  end # end ControllerMethods
+  end # end ControllerMethods module
 
 end # end Juggler module
