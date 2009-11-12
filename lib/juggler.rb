@@ -28,22 +28,34 @@ module Juggler
       to_return
     end
 
+
     # conditionally adding these methods so that the exception handling is
     # only activated if configured to do so. these are the methods that rails
     # looks for to override default behavior
     #---------------------------------------------------------------------------
     if Juggler::ExceptionHandler.config[:handle_public_errors]
+      puts("Controllers will be configured to handle exceptions " +
+           "in public with Juggler")
       def rescue_action_in_public(exception)
         handle_exception(exception, :request => request,
                                     :render_errors => true)
       end
+    else
+      puts("Controllers will NOT be configured to handle exceptions " +
+           "in public with Juggler")
     end
     if Juggler::ExceptionHandler.config[:handle_local_errors]
+      puts("Controllers will be configured to handle exceptions " +
+           "locally with Juggler")
       def rescue_action_locally(exception)
         handle_exception(exception, :request => request,
                                     :render_errors => true)
       end
+    else
+      puts("Controllers will NOT be configured to handle exceptions " +
+           "locally with Juggler")
     end
+
 
     # extract a hash of relevant (and serializable) parameters from a request
     #---------------------------------------------------------------------------
@@ -121,6 +133,8 @@ module Juggler
         log_error("Still no template found. Using gem default of " +
                   file_path)
       end
+
+      log_error("Will render error template: '#{file_path}'")
 
       render :file => file_path,
              :status => status_code
