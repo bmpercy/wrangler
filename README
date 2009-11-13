@@ -1,4 +1,4 @@
-= Juggler
+= Wrangler
 
 == NOTE/DISCLAIMER
 This gem is almost completely inspired by/ripped off the exception_notification
@@ -21,7 +21,7 @@ errors.
 * Allows for lots of configuring of which pages to show, whether to email or not.
 * Allows for asynchronous emailing through delayed_job if available, but works
 fine even if delayed_job not installed (email will be synchronous however)
-* Will honor filter_parameters set in the controller including the Juggler
+* Will honor filter_parameters set in the controller including the Wrangler
 module (except if the parameters are in the URL for GETs) when logging and
 emailing application state at the time of the exception
 * Allows email notification on exceptions thrown totally outside Controller
@@ -32,10 +32,10 @@ delayed_job
 === Bare Minimum
 There are a lot of defaults set, so getting started should be pretty easy. In
 fact, if you don't want any email notifications, you basically just need to
-include the Juggler module in your controller:
+include the Wrangler module in your controller:
     # application_controller.rb
     class ApplicationController < ActionController::Base
-      include Juggler
+      include Wrangler
 
       ...
     end
@@ -43,11 +43,11 @@ include the Juggler module in your controller:
 === Enabling email notifications
 Email notifications are configured to be sent with the default configuration,
 but you'll need to specify from and to addresses for emails to actually be sent.
-So that brings us to the configuration of Juggler. Recommended: just create a
-new initializer file (create a juggler.rb (or whatever you want to name the file)
-in  RAILS_ROOT/config/initializers/juggler.rb). In it, add the following:
+So that brings us to the configuration of Wrangler. Recommended: just create a
+new initializer file (create a wrangler.rb (or whatever you want to name the file)
+in  RAILS_ROOT/config/initializers/wrangler.rb). In it, add the following:
 
-  Juggler::ExceptionNotifier.configure do |notifier_config|
+  Wrangler::ExceptionNotifier.configure do |notifier_config|
     notifier_config.merge! :from_address => 'monitor@umamibud.com',
                            :recipient_addresses => ['u-ops-monitor@umamibud.com']
   end
@@ -58,9 +58,9 @@ have, you may want to change some settings in order to send from a different
 account from the one you may use to email your users (e.g. change the :user_name
 for smtp_settings):
 
-  Juggler::ExceptionNotifier.smtp_settings.merge! :user_name => 'notifier@mydomain.com'
+  Wrangler::ExceptionNotifier.smtp_settings.merge! :user_name => 'notifier@mydomain.com'
 
-(Recommend just putting that in the same juggler.rb initializer you created above)
+(Recommend just putting that in the same wrangler.rb initializer you created above)
 
 For more info on smtp_settings, see ActionMailer (http://am.rubyonrails.org/)
 
@@ -79,7 +79,7 @@ configure() method on the class and using the config hash that is yielded to
 set your configurations. See the method documentation for the configure() methods
 themselves, but here's the basic idea:
 
-     Juggler::ExceptionHandler.configure do |handler_config|
+     Wrangler::ExceptionHandler.configure do |handler_config|
        handler_config[:key1] = value1
        handler_config[:key2] = value2
        handler_config[:key_for_a_hash].merge! :subkey => value
@@ -88,14 +88,14 @@ themselves, but here's the basic idea:
     
      OR
     
-     Juggler::ExceptionHandler.configure do |handler_config|
+     Wrangler::ExceptionHandler.configure do |handler_config|
        handler_config.merge! :key1 => value1,
                              :key2 => value2,
        handler_config[:key_for_a_hash].merge! :subkey => value
        handler_config[:key_for_an_array] << another_value
      end
 
-(same with Juggler::ExceptionNotifier, except different classname)
+(same with Wrangler::ExceptionNotifier, except different classname)
 
 Most configurations are single values (e.g. nums or strings),
 but some are hashes or arrays. You can either overwrite the hashes/arrays, or
@@ -126,7 +126,7 @@ to make sure you've got the latest! :) ):
       :delayed_job_for_non_controller_errors => false,
       # mappings from exception classes to http status codes (see above)
       # add/remove from this list as desired in environment configuration
-      :error_class_status_codes => Juggler::codes_for_exception_classes,
+      :error_class_status_codes => Wrangler::codes_for_exception_classes,
       # explicitly indicate which exceptions to send email notifications for
       :notify_exception_classes => %w(),
       # indicate which http status codes should result in email notification
@@ -136,7 +136,7 @@ to make sure you've got the latest! :) ):
       # use as well...and that are configured already by default)
       :error_template_dir => File.join(RAILS_ROOT, 'app', 'views', 'error'),
       # excplicit mappings from exception class to arbitrary error page
-      # templates, different set for html and js responses (Juggler determines
+      # templates, different set for html and js responses (Wrangler determines
       # which to use automatically, so you can have an entry in both
       # hashes for the same error class)
       :error_class_html_templates => {},
@@ -157,7 +157,7 @@ to make sure you've got the latest! :) ):
 
       # just DON'T change this! this is the error template of last resort!
       :absolute_last_resort_default_error_template =>
-        File.join(JUGGLER_ROOT,'rails','app','views','juggler','500.html')
+        File.join(WRANGLER_ROOT,'rails','app','views','wrangler','500.html')
 
    #####################
    # ExceptionNotifier:
@@ -176,10 +176,10 @@ to make sure you've got the latest! :) ):
       :subject_prefix => "#{(defined?(Rails) ? Rails.env : RAILS_ENV).capitalize} ERROR",
       # can use this to define app-specific mail views using the same data
       # made available in exception_notification()
-      :mailer_template_root => File.join(JUGGLER_ROOT, 'views')
+      :mailer_template_root => File.join(WRANGLER_ROOT, 'views')
 
 == Search algorithm for error templates (given an exception and a status_code):
-When trying to find an appropriate error page template to render, Juggler
+When trying to find an appropriate error page template to render, Wrangler
 goes through several different attempts to locate an appropriate template,
 beginning with templates you've explicitly associated with the exception class
 or status code that has arisen...and on through to assuming default file naming
@@ -193,26 +193,26 @@ returns true to an is_a? call, use that
 (underscorified) in one of the following locations, use that:
 ** config[:error_template_dir]/
 ** RAILS_ROOT/public/
-** JUGGLER_ROOT/rails/app/views/juggler/
+** WRANGLER_ROOT/rails/app/views/wrangler/
 # if there is a file/template corresponding to the status code
 (e.g. named ###.html.erb where ### is the status code) in one of the following
 locations, use that:
 ** config[:error_template_dir]/
 ** RAILS_ROOT/public/
-** JUGGLER_ROOT/rails/app/views/juggler/
+** WRANGLER_ROOT/rails/app/views/wrangler/
 # if there is a file/template corresponding to a parent class name of the
 exception (underscorified) one of the following locations, use that:
 ** config[:error_template_dir]/
 ** RAILS_ROOT/public/
-** JUGGLER_ROOT/rails/app/views/juggler/
+** WRANGLER_ROOT/rails/app/views/wrangler/
 # :default_error_template
 # :absolute_last_resort_default_error_template
 
 == Using outside a Controller:
-You can still use Juggler outside the context of a Controller class. If you'll
-be running within the context of an object instance, you can just include Juggler
+You can still use Wrangler outside the context of a Controller class. If you'll
+be running within the context of an object instance, you can just include Wrangler
 in the object's class. If you'll be running 'static' code, you can refer to
-relevant methods via the Juggler module. Note that in both cases, you'll be
+relevant methods via the Wrangler module. Note that in both cases, you'll be
 calling the notify_on_error() method. Also note that the notify_on_error()
 method will re-raise the exception that occurred in the block, so you may want
 to begin/rescue/end around the notify_on_error() method call
@@ -220,7 +220,7 @@ to begin/rescue/end around the notify_on_error() method call
 using in an object instance:
 
    class MyClass
-     include Juggler
+     include Wrangler
 
      def my_error_method; raise "error!"; end
      
@@ -233,15 +233,15 @@ using in an object instance:
 
 using 'statically':
 
-   Juggler::notify_on_error { run_some_method_that_might_raise_exceptions }
+   Wrangler::notify_on_error { run_some_method_that_might_raise_exceptions }
 
-== Maintaining the Juggler gem
+== Maintaining the Wrangler gem
 Should be pretty straightforward. Note that we're using jeweler, so the .gemspec
 isn't included in the git repos; it gets generated dynamically from the settings
 in Rakefile. 
 
 To build:
 
-     cd .../juggler
+     cd .../wrangler
      rake gemspec
      rake build
