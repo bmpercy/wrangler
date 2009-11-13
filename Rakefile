@@ -7,10 +7,15 @@ begin
     gemspec.summary = "Handles exceptions in rails apps, rendering error " +
                       "pages and emailing when exceptions occur"
     gemspec.description = <<-DESC 
-
-      To Do write description
-
-    DESC
+A gem for handling exceptions thrown inside your Rails app. If you include the
+gem in your application controller, Wrangler will render the error pages you
+configure for each exception or HTTP error code. It will also handle notifying
+you via email when certain exceptions are raised. Allows for configuration of
+which exceptions map to which error pages, which exceptions result in emails
+being sent. Also allows for asynchronous email sending via delayed job so that
+error pages don't take forever to load. See README for lots of info on how to
+get started and what configuration options are available.
+DESC
     gemspec.email = "percivalatumamibuddotcom"
     gemspec.homepage = "http://github.com/bmpercy/wrangler"
     gemspec.authors = ['Brian Percival']
