@@ -1,4 +1,4 @@
-module Juggler
+module Wrangler
 
   # a utility method that should only be used internally. don't call this; it
   # should only be called once by the Config class and you can get/set it there.
@@ -38,7 +38,7 @@ module Juggler
   # include a helper method or two, but the main interaction with
   # ExceptionHandler is setting and getting config, e.g.
   #
-  # Juggler::ExceptionHandler.configure do |handler_config|
+  # Wrangler::ExceptionHandler.configure do |handler_config|
   #   handler_config.merge! :key => value
   # end
   #-----------------------------------------------------------------------------
@@ -62,7 +62,7 @@ module Juggler
       :delayed_job_for_non_controller_errors => false,
       # mappings from exception classes to http status codes (see above)
       # add/remove from this list as desired in environment configuration
-      :error_class_status_codes => Juggler::codes_for_exception_classes,
+      :error_class_status_codes => Wrangler::codes_for_exception_classes,
       # explicitly indicate which exceptions to send email notifications for
       :notify_exception_classes => %w(),
       # indicate which http status codes should result in email notification
@@ -72,7 +72,7 @@ module Juggler
       # use as well...and that are configured already by default)
       :error_template_dir => File.join(RAILS_ROOT, 'app', 'views', 'error'),
       # excplicit mappings from exception class to arbitrary error page
-      # templates, different set for html and js responses (Juggler determines
+      # templates, different set for html and js responses (Wrangler determines
       # which to use automatically, so you can have an entry in both
       # hashes for the same error class)
       :error_class_html_templates => {},
@@ -93,7 +93,7 @@ module Juggler
 
       # just DON'T change this! this is the error template of last resort!
       :absolute_last_resort_default_error_template =>
-        File.join(JUGGLER_ROOT,'rails','app','views','juggler','500.html')
+        File.join(WRANGLER_ROOT,'rails','app','views','wrangler','500.html')
     }
 
     cattr_accessor :config
@@ -109,7 +109,7 @@ module Juggler
     #   overwriting the arrays/hashes completely unless you don't want to
     #   take advantage of lots of out-of-the-box config
     #
-    # Juggler::ExceptionHandler.configure do |handler_config|
+    # Wrangler::ExceptionHandler.configure do |handler_config|
     #   handler_config[:key1] = value1
     #   handler_config[:key2] = value2
     #   handler_config[:key_for_a_hash].merge! :subkey => value
@@ -118,7 +118,7 @@ module Juggler
     #
     # OR
     #
-    # Juggler::ExceptionHandler.configure do |handler_config|
+    # Wrangler::ExceptionHandler.configure do |handler_config|
     #   handler_config.merge! :key1 => value1,
     #                         :key2 => value2,
     #   handler_config[:key_for_a_hash].merge! :subkey => value
@@ -191,27 +191,27 @@ module Juggler
   #                   or not (Rails only)
   #   :proc_name: a string representation of the process/app that was running
   #               when the exception was raised. default value is
-  #               Juggler::ExceptionHandler.config[:app_name].
+  #               Wrangler::ExceptionHandler.config[:app_name].
   #-----------------------------------------------------------------------------
   def handle_exception(exception, options = {})
     request = options[:request]
     render_errors = options[:render_errors] || false
     proc_name = options[:proc_name] || config[:app_name]
 
-    status_code = Juggler::ExceptionHandler.status_code_for_exception(exception)
+    status_code = Wrangler::ExceptionHandler.status_code_for_exception(exception)
     request_data = request_data_from_request(request) unless request.nil?
 
     if notify_on_exception?(exception, status_code)
       if notify_with_delayed_job?
         # don't pass in request as it contains not-easily-serializable stuff
-        Juggler::ExceptionNotifier.send_later(:deliver_exception_notification,
+        Wrangler::ExceptionNotifier.send_later(:deliver_exception_notification,
                                               exception,
                                               proc_name,
                                               exception.backtrace,
                                               status_code,
                                               request_data)
       else
-        Juggler::ExceptionNotifier.deliver_exception_notification(exception,
+        Wrangler::ExceptionNotifier.deliver_exception_notification(exception,
                                                          proc_name,
                                                          exception.backtrace,
                                                          status_code,

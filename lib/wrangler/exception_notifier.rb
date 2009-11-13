@@ -1,8 +1,8 @@
-module Juggler
-  # handles notifying (sending emails) for the juggler gem. configuration for
+module Wrangler
+  # handles notifying (sending emails) for the wrangler gem. configuration for
   # the class is set in an initializer via the configure() method, e.g.
   #
-  # Juggler::ExceptionNotifier.configure do |config|
+  # Wrangler::ExceptionNotifier.configure do |config|
   #   config[:key] = value
   # end
   #
@@ -24,7 +24,7 @@ module Juggler
       :subject_prefix => "#{(defined?(Rails) ? Rails.env : RAILS_ENV).capitalize} ERROR",
       # can use this to define app-specific mail views using the same data
       # made available in exception_notification()
-      :mailer_template_root => File.join(JUGGLER_ROOT, 'views')
+      :mailer_template_root => File.join(WRANGLER_ROOT, 'views')
     }
 
     cattr_accessor :config

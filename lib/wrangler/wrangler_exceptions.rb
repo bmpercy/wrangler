@@ -1,5 +1,5 @@
 # a bunch of handy exceptions. using the Http ones will require rails
-module Juggler
+module Wrangler
 
   # base class for all the http-related exception classes
   #-----------------------------------------------------------------------------

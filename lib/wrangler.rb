@@ -1,8 +1,8 @@
-require 'juggler/juggler_helper.rb'
-require 'juggler/exception_handler.rb'
-require 'juggler/exception_notifier.rb'
+require 'wrangler/wrangler_helper.rb'
+require 'wrangler/exception_handler.rb'
+require 'wrangler/exception_notifier.rb'
 
-module Juggler
+module Wrangler
 
   def self.included(base)
     # only add in the controller-specific methods if the including class is one
@@ -12,32 +12,32 @@ module Juggler
       # conditionally including these methods (each wrapped in a separate
       # module) based on the configuration of whether to handle exceptions in
       # the given environment or not. this allows the default implementation
-      # of the two rescue methods to run when Juggler-based exception handling
+      # of the two rescue methods to run when Wrangler-based exception handling
       # is disabled.
 
-      if Juggler::ExceptionHandler.config[:handle_public_errors]
-        Rails.logger.info "Configuring #{base.name} with Juggler's rescue_action_in_public"
+      if Wrangler::ExceptionHandler.config[:handle_public_errors]
+        Rails.logger.info "Configuring #{base.name} with Wrangler's rescue_action_in_public"
         base.send(:include, PublicControllerMethods)
       else
-        Rails.logger.info "NOT Configuring #{base.name} with Juggler's rescue_action_in_public"
+        Rails.logger.info "NOT Configuring #{base.name} with Wrangler's rescue_action_in_public"
       end
 
-      if Juggler::ExceptionHandler.config[:handle_local_errors]
-        Rails.logger.info "Configuring #{base.name} with Juggler's rescue_action_locally"
+      if Wrangler::ExceptionHandler.config[:handle_local_errors]
+        Rails.logger.info "Configuring #{base.name} with Wrangler's rescue_action_locally"
         base.send(:include, LocalControllerMethods)
       else
-        Rails.logger.info "NOT configuring #{base.name} with Juggler's rescue_action_locally"
+        Rails.logger.info "NOT configuring #{base.name} with Wrangler's rescue_action_locally"
       end
     end
   end
 
 
-  # methods to only be included into a controller if Juggler is configured to
+  # methods to only be included into a controller if Wrangler is configured to
   # handle exceptions for public reqeusts. (Conditionally included into
-  # controllers in the Juggler::included() method).
+  # controllers in the Wrangler::included() method).
   #-----------------------------------------------------------------------------
   module PublicControllerMethods
-    # override default behavior and let Juggler handle the exception for
+    # override default behavior and let Wrangler handle the exception for
     # public (non-local) requests.
     #---------------------------------------------------------------------------
     def rescue_action_in_public(exception)
@@ -47,12 +47,12 @@ module Juggler
   end
 
 
-  # methods to only be included into a controller if Juggler is configured to
+  # methods to only be included into a controller if Wrangler is configured to
   # handle exceptions for local reqeusts. (Conditionally included into
-  # controllers in the Juggler::included() method).
+  # controllers in the Wrangler::included() method).
   #-----------------------------------------------------------------------------
   module LocalControllerMethods
-    # override default behavior and let Juggler handle the exception for
+    # override default behavior and let Wrangler handle the exception for
     # local requests.
     #---------------------------------------------------------------------------
     def rescue_action_locally(exception)
@@ -62,7 +62,7 @@ module Juggler
   end
 
 
-  # module of instance methods to be added to the class including Juggler
+  # module of instance methods to be added to the class including Wrangler
   # only if the including class is a rails controller class
   #-----------------------------------------------------------------------------
   module ControllerMethods
@@ -74,8 +74,8 @@ module Juggler
       to_return = super
       if to_return &&
            (
-             (local_request? && Juggler::ExceptionHandler.config[:handle_local_errors]) ||
-             (!local_request? && Juggler::ExceptionHandler.config[:handle_public_errors])
+             (local_request? && Wrangler::ExceptionHandler.config[:handle_local_errors]) ||
+             (!local_request? && Wrangler::ExceptionHandler.config[:handle_public_errors])
            )
 
         handle_exception(exception, :request => request,
@@ -126,7 +126,7 @@ module Juggler
     #---------------------------------------------------------------------------
     def skip_request_env?(request_param)
       skip_env = false
-      Juggler::ExceptionHandler.config[:request_env_to_skip].each do |pattern|
+      Wrangler::ExceptionHandler.config[:request_env_to_skip].each do |pattern|
         if (pattern.is_a?(String) && pattern == request_param) ||
            (pattern.is_a?(Regexp) && pattern =~ request_param)
           skip_env = true
@@ -222,7 +222,7 @@ module Juggler
         # search for mapping from an ancestor class to error template
 
         ancestor_class =
-          Juggler::class_has_ancestor?(exception_class.superclass,
+          Wrangler::class_has_ancestor?(exception_class.superclass,
                                        template_mappings)
 
         if ancestor_class
@@ -241,7 +241,7 @@ module Juggler
 
       search_paths = [ config[:error_template_dir],
                        File.join(RAILS_ROOT, 'public'),
-                       File.join(JUGGLER_ROOT, 'rails', 'app', 'views', 'juggler')
+                       File.join(WRANGLER_ROOT, 'rails', 'app', 'views', 'wrangler')
                      ]
 
       # find files in specified directory like 'exception_class_name.format', e.g.
@@ -281,4 +281,4 @@ module Juggler
 
   end # end ControllerMethods module
 
-end # end Juggler module
+end # end Wrangler module

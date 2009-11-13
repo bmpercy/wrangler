@@ -1,5 +1,5 @@
-module Juggler
-  JUGGLER_ROOT = "#{File.dirname(__FILE__)}/../.."
+module Wrangler
+  WRANGLER_ROOT = "#{File.dirname(__FILE__)}/../.."
 
   # make all of these instance methods act as  module functions as well
   # (any instance method below this gets added as a module function as well)
@@ -89,7 +89,7 @@ module Juggler
   # shorthand access to the exception handling config
   #-----------------------------------------------------------------------------
   def config
-    Juggler::ExceptionHandler.config
+    Wrangler::ExceptionHandler.config
   end
 
 end
