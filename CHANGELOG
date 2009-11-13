@@ -3,6 +3,7 @@
 
 * got all of the bugs identified so far (i think) and got a full draft of the
 README file
+* renamed the gem because of name conflict with an existing gem named juggler(!)
 
 2009-11-12
 ----------
