@@ -2,7 +2,13 @@ module Wrangler
   WRANGLER_ROOT = "#{File.dirname(__FILE__)}/../.."
 
   # make all of these instance methods act as  module functions as well
-  # (any instance method below this gets added as a module function as well)
+  # (any instance method below this gets added as a module function as well),
+  # so that they can be used from within an instance of a class that includes
+  # this module, or by calling methods on the module itself. this allows for
+  # more 'procedural' or script code to use the notification logic without
+  # forcing the creating of a class (and instantiation thereof) that includes
+  # this module.
+  # http://ruby-doc.org/core/classes/Module.html#M001642
   module_function
 
   # utility to determine if a class has another class as its ancestor. 

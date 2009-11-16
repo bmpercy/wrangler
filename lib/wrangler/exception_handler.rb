@@ -58,8 +58,8 @@ module Wrangler
       # configure whether to send emails synchronously or asynchronously
       # using delayed_job (these can be true even if delayed job is not
       # installed, in which case, will just send emails synchronously anyway)
-      :delayed_job_for_controller_errors => false,
-      :delayed_job_for_non_controller_errors => false,
+      :delayed_job_for_controller_errors => true,
+      :delayed_job_for_non_controller_errors => true,
       # mappings from exception classes to http status codes (see above)
       # add/remove from this list as desired in environment configuration
       :error_class_status_codes => Wrangler::codes_for_exception_classes,
@@ -92,6 +92,8 @@ module Wrangler
       # regexp-style
 
       # just DON'T change this! this is the error template of last resort!
+      # if you do change this, you really should have a good reason for it and
+      # really know what you're doing. really.
       :absolute_last_resort_default_error_template =>
         File.join(WRANGLER_ROOT,'rails','app','views','wrangler','500.html')
     }

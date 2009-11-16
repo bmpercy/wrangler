@@ -27,6 +27,8 @@ emailing application state at the time of the exception
 * Allows email notification on exceptions thrown totally outside Controller
 context, e.g. in a script run (with rails environment) in a cronjob or
 delayed_job
+* See TODO for things that are explicitly not included yet, but that could/
+should be added
 
 == Quickstart
 === Bare Minimum
@@ -48,8 +50,8 @@ new initializer file (create a wrangler.rb (or whatever you want to name the fil
 in  RAILS_ROOT/config/initializers/wrangler.rb). In it, add the following:
 
   Wrangler::ExceptionNotifier.configure do |notifier_config|
-    notifier_config.merge! :from_address => 'monitor@umamibud.com',
-                           :recipient_addresses => ['u-ops-monitor@umamibud.com']
+    notifier_config.merge! :from_address => 'notifer@example.com',
+                           :recipient_addresses => ['ops-team@example.com']
   end
 
 And, if you haven't already configured ActionMailer to send emails, you'll need

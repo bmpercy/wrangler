@@ -33,3 +33,5 @@ the ExceptionHandler class where it used to be... ;)  )
 out the stacktrace or the request sections...)
 * allow custom email views to override the Juggler email view (e.g. allowing
 html, additional data, formatting differences...)
+* add xml responses to the :error_class_xxx_templates pattern to allow
+configuring xml error response templates
