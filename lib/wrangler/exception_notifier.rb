@@ -9,6 +9,12 @@ module Wrangler
   # see README or source code for possible values and default settings
   #-----------------------------------------------------------------------------
   class ExceptionNotifier < ActionMailer::Base
+
+    # smtp settings specific to this class; allows for changing settings
+    # (e.g. from-address) to be different from other emails sent in your app
+    @@smtp_settings_overrides = {}
+    cattr_accessor :smtp_settings_overrides
+
     # the default configuration
     @@config ||= {
       # who the emails will be coming from. if nil or missing or empty string,
@@ -34,6 +40,12 @@ module Wrangler
     end
 
     self.template_root = config[:mailer_template_root]
+
+    # Allows overriding smtp_settings without changing parent class' settings
+    #-----------------------------------------------------------------------------
+    def self.smtp_settings
+      @@smtp_settings_overrides.reverse_merge @@smtp_settings
+    end  
 
     # form and send the notification email (note: this gets called indirectly
     # when you call ExceptionNotifier.deliver_exception_notification())
