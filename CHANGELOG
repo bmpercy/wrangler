@@ -1,3 +1,8 @@
+0.1.4
+-----
+* (attempted) bug fix to get the prior version's feature to work properly (to
+  actually override the parent class's settings)
+
 0.1.3
 -----
 * added a means for setting smtp settings without changing the parent class'
