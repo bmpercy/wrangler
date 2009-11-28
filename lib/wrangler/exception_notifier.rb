@@ -68,7 +68,10 @@ module Wrangler
     #              be nil and MUST be nil if calling this method with
     #              delayed_job. Optional.
     #---------------------------------------------------------------------------
-    def exception_notification(exception, proc_name, backtrace,
+    def exception_notification(exception,
+                               exception_message,
+                               proc_name,
+                               backtrace,
                                status_code = nil,
                                request_data = nil,
                                request = nil)
@@ -90,6 +93,7 @@ module Wrangler
 
       body_hash =
         { :exception =>    exception,
+          :exception_message => exception_message,
           :backtrace =>    backtrace,
           :status_code =>  status_code,
           :request_data => request_data,
@@ -102,7 +106,7 @@ module Wrangler
       subject      "[#{proc_name + (proc_name ? ' ' : '')}" +
                    "#{config[:subject_prefix]}] " +
                    "#{exception.class.name}: " +
-                   "#{exception.message.inspect}"
+                   "#{exception_message}"
       body         body_hash
       sent_on      Time.now
       content_type 'text/plain'

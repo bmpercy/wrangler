@@ -203,26 +203,29 @@ module Wrangler
     status_code = Wrangler::ExceptionHandler.status_code_for_exception(exception)
     request_data = request_data_from_request(request) unless request.nil?
 
+    log_exception(exception, request_data, status_code)
+
     if notify_on_exception?(exception, status_code)
       if notify_with_delayed_job?
         # don't pass in request as it contains not-easily-serializable stuff
+        log_error
         Wrangler::ExceptionNotifier.send_later(:deliver_exception_notification,
                                               exception,
+                                              exception.to_str,
                                               proc_name,
                                               exception.backtrace,
                                               status_code,
                                               request_data)
       else
         Wrangler::ExceptionNotifier.deliver_exception_notification(exception,
-                                                         proc_name,
-                                                         exception.backtrace,
-                                                         status_code,
-                                                         request_data,
-                                                         request)
+                                         exception.to_str,
+                                         proc_name,
+                                         exception.backtrace,
+                                         status_code,
+                                         request_data,
+                                         request)
       end
     end
-
-    log_exception(exception, request_data, status_code)
 
     if render_errors
       render_error_template(exception, status_code)

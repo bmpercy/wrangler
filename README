@@ -247,3 +247,19 @@ To build:
      cd .../wrangler
      rake gemspec
      rake build
+
+To test:
+Now at least, wrangler testing is all manual, which is bad (see TODO). So to
+test, try at least some of the following cases:
+* enable/disable local exception handling
+* enable/disable local notification
+* enable/disable delayed_job notification
+* raise an exception with a status_code
+* raise an exception without a status_code
+* raise an exception explicitly set to result in notification
+* raise an exception with ancestor class set to result in notification
+* raise an exception with error status code set to result in notification
+* raise an exception with explicit class mapping to error page
+* raise an exception with ancestor class mapping to error page
+* raise an exception with status_code mapping to error page
+* raise an ADDITIONAL exception inside the exception handling code...

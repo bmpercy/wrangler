@@ -1,3 +1,10 @@
+0.1.5
+-----
+* changed wrangler to log errors before sending notifications in case notification sending
+  somehow results in new exception
+* tried a little harder to ensure that exception messages (instead of just object id) is
+  included in logs and exception notifications
+
 0.1.4
 -----
 * (attempted) bug fix to get the prior version's feature to work properly (to

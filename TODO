@@ -11,6 +11,7 @@ This is a collection of things that could/should be worked on:
 exception/status code, we just log that fact right now. this is probably worth
 a notification in itself (that a template is missing or config is not set up
 properly)...so send an email if an appropriate template cannot be found.
+* come up with an automated testing strategy
 
 == Cleanup:
 * (Potentially security?) copy what exception_notification does and sanitize

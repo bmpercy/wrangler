@@ -11,7 +11,8 @@ module Wrangler
   # http://ruby-doc.org/core/classes/Module.html#M001642
   module_function
 
-  # utility to determine if a class has another class as its ancestor. 
+
+  # utility to determine if a class has another class as its ancestor.
   #
   # returns the ancestor class (if any) that is found to be the ancestor
   # of klass (will return the nearest ancestor in other_klasses).
@@ -54,14 +55,15 @@ module Wrangler
     return nil
   end
 
+
   # log the exception using logger if available. if object does not have a
   # logger, will just puts()
   #-----------------------------------------------------------------------------
   def log_exception(exception, request_data = nil, status_code = nil)
     msgs = []
-
     msgs << "An exception was caught (#{exception.class.name}):"
-    msgs << exception.message
+    msgs << exception.to_str
+
     unless request_data.blank?
       msgs <<  "Request params were:"
       msgs <<  request_data.inspect
@@ -75,6 +77,7 @@ module Wrangler
 
     log_error msgs
   end
+
 
   # handles logging error messages, using logger if available and puts otherwise
   #-----------------------------------------------------------------------------
@@ -91,6 +94,7 @@ module Wrangler
       end
     end
   end
+
 
   # shorthand access to the exception handling config
   #-----------------------------------------------------------------------------
