@@ -21,7 +21,7 @@ DESC
     gemspec.email = "percivalatumamibuddotcom"
     gemspec.homepage = "http://github.com/bmpercy/wrangler"
     gemspec.authors = ['Brian Percival']
-    gemspec.add_dependency 'actionmailer', [">= 0.0.0"]
+    gemspec.add_dependency 'actionmailer', '>= 0.0.0'
     gemspec.files = ["wrangler.gemspec",
                      "[A-Z]*.*",
                      "lib/**/*.rb",
