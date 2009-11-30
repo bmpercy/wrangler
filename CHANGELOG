@@ -1,3 +1,10 @@
+0.1.7-10
+--------
+* various attempts to prevent automatic installation of the latest versions of
+  actionpack and activesupport whenever the wrangler gem is installed. giving up
+  at this point, but 0.1.10 will fix a terrible bug introduced in the process
+  of these attempts.
+
 0.1.5
 -----
 * changed wrangler to log errors before sending notifications in case notification sending
