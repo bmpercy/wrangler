@@ -52,7 +52,8 @@ module Wrangler
     # when you call ExceptionNotifier.deliver_exception_notification())
     #
     # arguments:
-    #   - exception: the exception that was raised
+    #   - exception_classname: the class of exception that was raised
+    #   - exception_message: the error message carried by the exception
     #   - proc_name: the name of the process in which the exception arised
     #   - backtrace: the stack trace from the exception (passing in excplicitly
     #                because serializing the exception does not preserve the
@@ -68,7 +69,7 @@ module Wrangler
     #              be nil and MUST be nil if calling this method with
     #              delayed_job. Optional.
     #---------------------------------------------------------------------------
-    def exception_notification(exception,
+    def exception_notification(exception_classname,
                                exception_message,
                                proc_name,
                                backtrace,
@@ -92,7 +93,7 @@ module Wrangler
       # scrutinize any use of @request in the views!
 
       body_hash =
-        { :exception =>    exception,
+        { :exception_classname =>    exception_classname,
           :exception_message => exception_message,
           :backtrace =>    backtrace,
           :status_code =>  status_code,
@@ -105,7 +106,7 @@ module Wrangler
       recipients   config[:recipient_addresses]
       subject      "[#{proc_name + (proc_name ? ' ' : '')}" +
                    "#{config[:subject_prefix]}] " +
-                   "#{exception.class.name}: " +
+                   "#{exception_classname}: " +
                    "#{exception_message}"
       body         body_hash
       sent_on      Time.now

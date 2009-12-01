@@ -205,21 +205,24 @@ module Wrangler
 
     log_exception(exception, request_data, status_code)
 
+    exception_classname = exception.is_a?(Class) ? exception.name : exception.class.name
+    exception_string = exception.respond_to?(:to_str) ? exception.to_str : exception
+
     if notify_on_exception?(exception, status_code)
       if notify_with_delayed_job?
         # don't pass in request as it contains not-easily-serializable stuff
         log_error "Wrangler sending email notification asynchronously"
         Wrangler::ExceptionNotifier.send_later(:deliver_exception_notification,
-                                              exception,
-                                              exception.to_str,
+                                              exception_classname,
+                                              exception_string,
                                               proc_name,
                                               exception.backtrace,
                                               status_code,
                                               request_data)
       else
         log_error "Wrangler sending email notification synchronously"
-        Wrangler::ExceptionNotifier.deliver_exception_notification(exception,
-                                         exception.to_str,
+        Wrangler::ExceptionNotifier.deliver_exception_notification(exception_classname,
+                                         exception_string,
                                          proc_name,
                                          exception.backtrace,
                                          status_code,
