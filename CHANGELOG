@@ -1,3 +1,8 @@
+0.1.11
+------
+* no longer throw exceptions within handle_exception if the exception raised
+  does not respond_to?(:to_str) (e.g. instances of Class).
+
 0.1.7-10
 --------
 * various attempts to prevent automatic installation of the latest versions of
