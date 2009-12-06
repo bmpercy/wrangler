@@ -1,6 +1,7 @@
 require 'wrangler/wrangler_helper.rb'
 require 'wrangler/exception_handler.rb'
 require 'wrangler/exception_notifier.rb'
+require 'wrangler/wrangler_exceptions.rb'
 
 module Wrangler
 
