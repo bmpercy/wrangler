@@ -1,3 +1,7 @@
+0.1.12
+------
+* added an exception class for http status 403 - forbidden.
+
 0.1.11
 ------
 * no longer throw exceptions within handle_exception if the exception raised
