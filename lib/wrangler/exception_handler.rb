@@ -126,7 +126,7 @@ module Wrangler
     #   handler_config[:key_for_a_hash].merge! :subkey => value
     #   handler_config[:key_for_an_array] << another_value
     # end
-    # 
+    #
     # NOTE: sure, you can change this configuration on the fly in your app, but
     # we don't recommend it. plus, if you do and you're using delayed_job, there
     # may end up being configuration differences between the rails process and
@@ -200,16 +200,27 @@ module Wrangler
     render_errors = options[:render_errors] || false
     proc_name = options[:proc_name] || config[:app_name]
 
-    status_code = Wrangler::ExceptionHandler.status_code_for_exception(exception)
+    status_code =
+      Wrangler::ExceptionHandler.status_code_for_exception(exception)
     request_data = request_data_from_request(request) unless request.nil?
 
     log_exception(exception, request_data, status_code)
 
-    exception_classname = exception.is_a?(Class) ? exception.name : exception.class.name
-    exception_string = exception.respond_to?(:to_str) ? exception.to_str : exception
+    if exception.is_a?(Class)
+      exception_classname = exception.name
+    else
+      exception_classname = exception.class.name
+    end
+
+    if exception.respond_to?(:message)
+      exception_string = exception.message
+    else
+      exception_string = exception.to_s
+    end
 
     if notify_on_exception?(exception, status_code)
       if notify_with_delayed_job?
+
         # don't pass in request as it contains not-easily-serializable stuff
         log_error "Wrangler sending email notification asynchronously"
         Wrangler::ExceptionNotifier.send_later(:deliver_exception_notification,

@@ -1,6 +1,6 @@
 <%
   # NOTE: be very careful pulling data out of request in the view...it is
-  # NOT cleaned, and may contain private data (e.g. passwords), so 
+  # NOT cleaned, and may contain private data (e.g. passwords), so
   # scrutinize any use of @request in the views!
   #-----------------------------------------------------------------------------
 -%>
@@ -10,7 +10,10 @@
 
 A <%= @exception_classname %> occurred:
  * <%= @exception_message %>
+<% unless @backtrace.blank? -%>
 in <%= @backtrace.first %>
+<% end -%>
+
 
 <% unless @backtrace.blank? -%>
 --------------------------------------------------

@@ -62,7 +62,12 @@ module Wrangler
   def log_exception(exception, request_data = nil, status_code = nil)
     msgs = []
     msgs << "An exception was caught (#{exception.class.name}):"
-    msgs << exception.respond_to?(:to_str) ? exception.to_str : exception
+
+    if exception.respond_to?(:message)
+      msgs << exception.message
+    else
+      msgs << exception.to_s
+    end
 
     unless request_data.blank?
       msgs <<  "Request params were:"
