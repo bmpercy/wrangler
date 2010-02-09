@@ -40,6 +40,10 @@ module Wrangler
     def initialize(msg = nil); super(401, msg); end
   end
 
+  class HttpForbidden < HttpStatusError
+    def initialize(msg = nil); super(403, msg); end
+  end
+
   class HttpNotFound < HttpStatusError
     def initialize(msg = nil); super(404, msg); end
   end
