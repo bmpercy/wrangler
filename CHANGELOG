@@ -1,3 +1,8 @@
+0.1.13
+------
+* bug fix to prevent to_str calls on exceptions to be called when they shouldn't
+  (must've been an order of operations error or something :( )
+
 0.1.12
 ------
 * added an exception class for http status 403 - forbidden.
