@@ -4,8 +4,7 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gemspec|
     gemspec.name = "wrangler"
-    gemspec.summary = "Handles exceptions in rails apps, rendering error " +
-                      "pages and emailing when exceptions occur"
+    gemspec.summary = "Handles exceptions in rails apps, rendering error pages and emailing when exceptions occur. Spun off from some work at discovereads.com"
     gemspec.description = <<-DESC 
 A gem for handling exceptions thrown inside your Rails app. If you include the
 gem in your application controller, wrangler will render the error pages you
