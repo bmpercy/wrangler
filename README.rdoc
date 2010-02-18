@@ -152,17 +152,17 @@ When trying to find an appropriate error page template to render, Wrangler goes 
 1. if there is an explicit mapping from the exception to an error page in :error_class_xxx_templates, use that
 1. if there is a mapping in :error_class_templates for which the exception returns true to an is_a? call, use that
 1. if there is a file/template corresponding to the exception name (underscorified) in one of the following locations, use that:
-** config[:error_template_dir]/
-** RAILS_ROOT/public/
-** WRANGLER_ROOT/rails/app/views/wrangler/
+  config[:error_template_dir]/
+  RAILS_ROOT/public/
+  WRANGLER_ROOT/rails/app/views/wrangler/
 1. if there is a file/template corresponding to the status code (e.g. named ###.html.erb where ### is the status code) in one of the following locations, use that:
-** config[:error_template_dir]/
-** RAILS_ROOT/public/
-** WRANGLER_ROOT/rails/app/views/wrangler/
+  config[:error_template_dir]/
+  RAILS_ROOT/public/
+  WRANGLER_ROOT/rails/app/views/wrangler/
 1. if there is a file/template corresponding to a parent class name of the exception (underscorified) one of the following locations, use that:
-** config[:error_template_dir]/
-** RAILS_ROOT/public/
-** WRANGLER_ROOT/rails/app/views/wrangler/
+  config[:error_template_dir]/
+  RAILS_ROOT/public/
+  WRANGLER_ROOT/rails/app/views/wrangler/
 1. :default_error_template
 1. :absolute_last_resort_default_error_template
 
