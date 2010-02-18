@@ -1,116 +1,82 @@
 = Wrangler
 
 == NOTE/DISCLAIMER
-This gem is almost completely inspired by/ripped off the exception_notification
-plugin/gem, but had to hack too much to get things to work with delayed_job
-that I just decided to start from scratch. You'll see that much has been
-borrowed however, so I owe a huge debt to the originals (exception_notification
-[http://github.com/rails/exception_notification] and
-super_exception_notification [http://github.com/pboling/exception_notification])
-to help me recreate the Rails hacking.
+This gem is almost completely inspired by/ripped off the exception_notification plugin/gem, but had to hack too much to get things to work with delayed_job that I just decided to start from scratch. You'll see that much has been borrowed however, so I owe a huge debt to the originals (exception_notification [http://github.com/rails/exception_notification] and super_exception_notification [http://github.com/pboling/exception_notification]) to help me recreate the Rails hacking.
 
-If you don't really care about using delayed_job for your emailing, consider
-going back to the originals, as they're likely better maintained.... ;)
+If you don't really care about using delayed_job for your emailing, consider going back to the originals, as they're likely better maintained.... ;)
 
 == Overview:
 A gem for handling exceptions in a Rails application/environment. 
 
 Some highlights:
-* Allows for rendering error pages and sending email notifications in case of
-errors.
+* Allows for rendering error pages and sending email notifications in case of errors.
 * Allows for lots of configuring of which pages to show, whether to email or not.
-* Allows for asynchronous emailing through delayed_job if available, but works
-fine even if delayed_job not installed (email will be synchronous however)
-* Will honor filter_parameters set in the controller including the Wrangler
-module (except if the parameters are in the URL for GETs) when logging and
-emailing application state at the time of the exception
-* Allows email notification on exceptions thrown totally outside Controller
-context, e.g. in a script run (with rails environment) in a cronjob or
-delayed_job
-* See TODO for things that are explicitly not included yet, but that could/
-should be added
+* Allows for asynchronous emailing through delayed_job if available, but works fine even if delayed_job not installed (email will be synchronous however)
+* Will honor filter_parameters set in the controller including the Wrangler module (except if the parameters are in the URL for GETs) when logging and emailing application state at the time of the exception
+* Allows email notification on exceptions thrown totally outside Controller context, e.g. in a script run (with rails environment) in a cronjob or delayed_job
+* See TODO for things that are explicitly not included yet, but that could/should be added
 
 == Quickstart
 === Bare Minimum
-There are a lot of defaults set, so getting started should be pretty easy. In
-fact, if you don't want any email notifications, you basically just need to
-include the Wrangler module in your controller:
-    # application_controller.rb
-    class ApplicationController < ActionController::Base
-      include Wrangler
+There are a lot of defaults set, so getting started should be pretty easy. In fact, if you don't want any email notifications, you basically just need to include the Wrangler module in your controller:
+  # application_controller.rb
+  class ApplicationController < ActionController::Base
+    include Wrangler
 
-      ...
-    end
+    ...
+
+  end
 
 === Enabling email notifications
-Email notifications are configured to be sent with the default configuration,
-but you'll need to specify from and to addresses for emails to actually be sent.
-So that brings us to the configuration of Wrangler. Recommended: just create a
-new initializer file (create a wrangler.rb (or whatever you want to name the file)
-in  RAILS_ROOT/config/initializers/wrangler.rb). In it, add the following:
+Email notifications are configured to be sent with the default configuration, but you'll need to specify from and to addresses for emails to actually be sent. So that brings us to the configuration of Wrangler. Recommended: just create a new initializer file (create a wrangler.rb (or whatever you want to name the file) in  RAILS_ROOT/config/initializers/wrangler.rb). In it, add the following:
 
   Wrangler::ExceptionNotifier.configure do |notifier_config|
     notifier_config.merge! :from_address => 'notifer@example.com',
                            :recipient_addresses => ['ops-team@example.com']
   end
 
-And, if you haven't already configured ActionMailer to send emails, you'll need
-to do that (e.g. setting ActionMailer::Base.smtp_settings), and even after you
-have, you may want to change some settings in order to send from a different
-account from the one you may use to email your users (e.g. change the :user_name
-for smtp_settings):
+And, if you haven't already configured ActionMailer to send emails, you'll need to do that (e.g. setting ActionMailer::Base.smtp_settings), and even after you have, you may want to change some settings in order to send from a different account from the one you may use to email your users (e.g. change the :user_name for smtp_settings):
 
   Wrangler::ExceptionNotifier.smtp_settings.merge! :user_name => 'notifier@mydomain.com'
 
 (Recommend just putting that in the same wrangler.rb initializer you created above)
 
-For more info on smtp_settings, see ActionMailer (http://am.rubyonrails.org/)
+For more info on smtp_settings, see ActionMailer [http://am.rubyonrails.org/]
 
 == Configuration
-There are two different classes that receive configuration, ExceptionHandler and
-ExceptionNotifier.
+There are two different classes that receive configuration, ExceptionHandler and ExceptionNotifier.
 
-ExceptionHandler stores configurations about what to do about exceptions (whether to
-handle them, email them, which error templates to render for each exception...).
+ExceptionHandler stores configurations about what to do about exceptions (whether to handle them, email them, which error templates to render for each exception...).
 
-ExceptionNotifier handles the sending of emails when exceptions occur, so
-stores configurations about where to send the emails.
+ExceptionNotifier handles the sending of emails when exceptions occur, so stores configurations about where to send the emails.
 
-You override defaults on each using the same syntax (as seen above) by calling the
-configure() method on the class and using the config hash that is yielded to
-set your configurations. See the method documentation for the configure() methods
-themselves, but here's the basic idea:
+You override defaults on each using the same syntax (as seen above) by calling the configure() method on the class and using the config hash that is yielded to set your configurations. See the method documentation for the configure() methods themselves, but here's the basic idea:
 
-     Wrangler::ExceptionHandler.configure do |handler_config|
-       handler_config[:key1] = value1
-       handler_config[:key2] = value2
-       handler_config[:key_for_a_hash].merge! :subkey => value
-       handler_config[:key_for_an_array] << another_value
-     end
+  Wrangler::ExceptionHandler.configure do |handler_config|
+    handler_config[:key1] = value1
+    handler_config[:key2] = value2
+    handler_config[:key_for_a_hash].merge! :subkey => value
+    handler_config[:key_for_an_array] << another_value
+  end
     
-     OR
+OR
     
-     Wrangler::ExceptionHandler.configure do |handler_config|
-       handler_config.merge! :key1 => value1,
-                             :key2 => value2,
-       handler_config[:key_for_a_hash].merge! :subkey => value
-       handler_config[:key_for_an_array] << another_value
-     end
+  Wrangler::ExceptionHandler.configure do |handler_config|
+    handler_config.merge! :key1 => value1,
+                          :key2 => value2,
+    handler_config[:key_for_a_hash].merge! :subkey => value
+    handler_config[:key_for_an_array] << another_value
+  end
 
 (same with Wrangler::ExceptionNotifier, except different classname)
 
-Most configurations are single values (e.g. nums or strings),
-but some are hashes or arrays. You can either overwrite the hashes/arrays, or
-selectively delete, or just append. Recommend just appending to the defaults
-in most cases, but if you know what you're doing, you can do whatever you like!
+Most configurations are single values (e.g. nums or strings), but some are hashes or arrays. You can either overwrite the hashes/arrays, or selectively delete, or just append. Recommend just appending to the defaults in most cases, but if you know what you're doing, you can do whatever you like!
 
-Here is the full set of configuration values for both classes, as well as their
-default values (pasted in from the classes, so you can check the code directly
-to make sure you've got the latest! :) ):
+Here is the full set of configuration values for both classes, as well as their default values (pasted in from the classes, so you can check the code directly to make sure you've got the latest! :) ):
 
-   ####################
-   # ExceptionHandler:
-   ####################
+####################
+# ExceptionHandler:
+####################
 
       :app_name => '',
       :handle_local_errors => false,
@@ -161,9 +127,9 @@ to make sure you've got the latest! :) ):
       :absolute_last_resort_default_error_template =>
         File.join(WRANGLER_ROOT,'rails','app','views','wrangler','500.html')
 
-   #####################
-   # ExceptionNotifier:
-   #####################
+#####################
+# ExceptionNotifier:
+#####################
 
       # who the emails will be coming from. if nil or missing or empty string,
       # effectively disables email notification
@@ -181,29 +147,19 @@ to make sure you've got the latest! :) ):
       :mailer_template_root => File.join(WRANGLER_ROOT, 'views')
 
 == Search algorithm for error templates (given an exception and a status_code):
-When trying to find an appropriate error page template to render, Wrangler
-goes through several different attempts to locate an appropriate template,
-beginning with templates you've explicitly associated with the exception class
-or status code that has arisen...and on through to assuming default file naming
-conventions and finally failsafe default templates.
+When trying to find an appropriate error page template to render, Wrangler goes through several different attempts to locate an appropriate template, beginning with templates you've explicitly associated with the exception class or status code that has arisen...and on through to assuming default file naming conventions and finally failsafe default templates.
 
-# if there is an explicit mapping from the exception to an error page in
-:error_class_xxx_templates, use that
-# if there is a mapping in :error_class_templates for which the exception
-returns true to an is_a? call, use that
-# if there is a file/template corresponding to the exception name
-(underscorified) in one of the following locations, use that:
+# if there is an explicit mapping from the exception to an error page in :error_class_xxx_templates, use that
+# if there is a mapping in :error_class_templates for which the exception returns true to an is_a? call, use that
+# if there is a file/template corresponding to the exception name (underscorified) in one of the following locations, use that:
 ** config[:error_template_dir]/
 ** RAILS_ROOT/public/
 ** WRANGLER_ROOT/rails/app/views/wrangler/
-# if there is a file/template corresponding to the status code
-(e.g. named ###.html.erb where ### is the status code) in one of the following
-locations, use that:
+# if there is a file/template corresponding to the status code (e.g. named ###.html.erb where ### is the status code) in one of the following locations, use that:
 ** config[:error_template_dir]/
 ** RAILS_ROOT/public/
 ** WRANGLER_ROOT/rails/app/views/wrangler/
-# if there is a file/template corresponding to a parent class name of the
-exception (underscorified) one of the following locations, use that:
+# if there is a file/template corresponding to a parent class name of the exception (underscorified) one of the following locations, use that:
 ** config[:error_template_dir]/
 ** RAILS_ROOT/public/
 ** WRANGLER_ROOT/rails/app/views/wrangler/
@@ -211,13 +167,7 @@ exception (underscorified) one of the following locations, use that:
 # :absolute_last_resort_default_error_template
 
 == Using outside a Controller:
-You can still use Wrangler outside the context of a Controller class. If you'll
-be running within the context of an object instance, you can just include Wrangler
-in the object's class. If you'll be running 'static' code, you can refer to
-relevant methods via the Wrangler module. Note that in both cases, you'll be
-calling the notify_on_error() method. Also note that the notify_on_error()
-method will re-raise the exception that occurred in the block, so you may want
-to begin/rescue/end around the notify_on_error() method call
+You can still use Wrangler outside the context of a Controller class. If you'll be running within the context of an object instance, you can just include Wrangler in the object's class. If you'll be running 'static' code, you can refer to relevant methods via the Wrangler module. Note that in both cases, you'll be calling the notify_on_error() method. Also note that the notify_on_error() method will re-raise the exception that occurred in the block, so you may want to begin/rescue/end around the notify_on_error() method call
 
 using in an object instance:
 
@@ -238,9 +188,7 @@ using 'statically':
    Wrangler::notify_on_error { run_some_method_that_might_raise_exceptions }
 
 == Maintaining the Wrangler gem
-Should be pretty straightforward. Note that we're using jeweler, so the .gemspec
-isn't included in the git repos; it gets generated dynamically from the settings
-in Rakefile. 
+Should be pretty straightforward. Note that we're using jeweler, so the .gemspec isn't included in the git repos; it gets generated dynamically from the settings in Rakefile.
 
 To build:
 
@@ -249,8 +197,7 @@ To build:
      rake build
 
 To test:
-Now at least, wrangler testing is all manual, which is bad (see TODO). So to
-test, try at least some of the following cases:
+Now at least, wrangler testing is all manual, which is bad (see TODO). So to test, try at least some of the following cases:
 * enable/disable local exception handling
 * enable/disable local notification
 * enable/disable delayed_job notification
