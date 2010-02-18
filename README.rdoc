@@ -149,22 +149,22 @@ Here is the full set of configuration values for both classes, as well as their 
 == Search algorithm for error templates (given an exception and a status_code):
 When trying to find an appropriate error page template to render, Wrangler goes through several different attempts to locate an appropriate template, beginning with templates you've explicitly associated with the exception class or status code that has arisen...and on through to assuming default file naming conventions and finally failsafe default templates.
 
-# if there is an explicit mapping from the exception to an error page in :error_class_xxx_templates, use that
-# if there is a mapping in :error_class_templates for which the exception returns true to an is_a? call, use that
-# if there is a file/template corresponding to the exception name (underscorified) in one of the following locations, use that:
+1. if there is an explicit mapping from the exception to an error page in :error_class_xxx_templates, use that
+1. if there is a mapping in :error_class_templates for which the exception returns true to an is_a? call, use that
+1. if there is a file/template corresponding to the exception name (underscorified) in one of the following locations, use that:
 ** config[:error_template_dir]/
 ** RAILS_ROOT/public/
 ** WRANGLER_ROOT/rails/app/views/wrangler/
-# if there is a file/template corresponding to the status code (e.g. named ###.html.erb where ### is the status code) in one of the following locations, use that:
+1. if there is a file/template corresponding to the status code (e.g. named ###.html.erb where ### is the status code) in one of the following locations, use that:
 ** config[:error_template_dir]/
 ** RAILS_ROOT/public/
 ** WRANGLER_ROOT/rails/app/views/wrangler/
-# if there is a file/template corresponding to a parent class name of the exception (underscorified) one of the following locations, use that:
+1. if there is a file/template corresponding to a parent class name of the exception (underscorified) one of the following locations, use that:
 ** config[:error_template_dir]/
 ** RAILS_ROOT/public/
 ** WRANGLER_ROOT/rails/app/views/wrangler/
-# :default_error_template
-# :absolute_last_resort_default_error_template
+1. :default_error_template
+1. :absolute_last_resort_default_error_template
 
 == Using outside a Controller:
 You can still use Wrangler outside the context of a Controller class. If you'll be running within the context of an object instance, you can just include Wrangler in the object's class. If you'll be running 'static' code, you can refer to relevant methods via the Wrangler module. Note that in both cases, you'll be calling the notify_on_error() method. Also note that the notify_on_error() method will re-raise the exception that occurred in the block, so you may want to begin/rescue/end around the notify_on_error() method call
