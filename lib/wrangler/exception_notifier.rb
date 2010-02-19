@@ -20,7 +20,7 @@ module Wrangler
     #-----------------------------------------------------------------------------
     def smtp_settings
       @@smtp_settings_overrides.reverse_merge @@smtp_settings
-    end  
+    end
 
     # the default configuration
     @@config ||= {
@@ -52,8 +52,12 @@ module Wrangler
     # when you call ExceptionNotifier.deliver_exception_notification())
     #
     # arguments:
-    #   - exception_classname: the class of exception that was raised
-    #   - exception_message: the error message carried by the exception
+    #   - exception_classname: the class of exception that was raised, if any
+    #   - error_message: the short version of the error message to display
+    #   - additional_messages: a string or array of additional error messages
+    #                          to be logged or sent in notification...allows
+    #                          for more detail in case it won't all display
+    #                          well in email subject line, for example
     #   - proc_name: the name of the process in which the exception arised
     #   - backtrace: the stack trace from the exception (passing in excplicitly
     #                because serializing the exception does not preserve the
@@ -70,7 +74,8 @@ module Wrangler
     #              delayed_job. Optional.
     #---------------------------------------------------------------------------
     def exception_notification(exception_classname,
-                               exception_message,
+                               error_message,
+                               additional_messages,
                                proc_name,
                                backtrace,
                                status_code = nil,
@@ -89,16 +94,17 @@ module Wrangler
       ensure_session_loaded(request)
 
       # NOTE: be very careful pulling data out of request in the view...it is
-      # NOT cleaned, and may contain private data (e.g. passwords), so 
+      # NOT cleaned, and may contain private data (e.g. passwords), so
       # scrutinize any use of @request in the views!
 
       body_hash =
         { :exception_classname =>    exception_classname,
-          :exception_message => exception_message,
+          :error_message => error_message,
+          :additional_messages => additional_messages,
           :backtrace =>    backtrace,
           :status_code =>  status_code,
           :request_data => request_data,
-          :request =>      request 
+          :request =>      request
         }
 
       body_hash.merge! extract_data_from_request_data(request_data)
@@ -106,8 +112,8 @@ module Wrangler
       recipients   config[:recipient_addresses]
       subject      "[#{proc_name + (proc_name ? ' ' : '')}" +
                    "#{config[:subject_prefix]}] " +
-                   "#{exception_classname}: " +
-                   "#{exception_message}"
+                   "#{exception_classname || 'error'}: " +
+                   "#{error_message}"
       body         body_hash
       sent_on      Time.now
       content_type 'text/plain'

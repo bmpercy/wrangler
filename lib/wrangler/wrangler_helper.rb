@@ -59,7 +59,8 @@ module Wrangler
   # log the exception using logger if available. if object does not have a
   # logger, will just puts()
   #-----------------------------------------------------------------------------
-  def log_exception(exception, request_data = nil, status_code = nil)
+  def log_exception(exception, request_data = nil,
+                    status_code = nil, error_messages = nil)
     msgs = []
     msgs << "An exception was caught (#{exception.class.name}):"
 
@@ -69,6 +70,12 @@ module Wrangler
       msgs << exception.to_s
     end
 
+    if error_messages.is_a?(Array)
+      msgs.concat error_messages
+    elsif !error_messages.blank?
+      msgs << error_messages
+    end
+
     unless request_data.blank?
       msgs <<  "Request params were:"
       msgs <<  request_data.inspect
@@ -76,7 +83,7 @@ module Wrangler
     unless status_code.blank?
       msgs <<  "Handling with status code: #{status_code}"
     end
-    unless exception.backtrace.blank?
+    if exception.respond_to?(:backtrace) && !exception.backtrace.blank?
       msgs <<  exception.backtrace.join("\n  ")
     end
 

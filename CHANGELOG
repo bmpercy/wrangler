@@ -1,7 +1,10 @@
+HEAD
+----
+* adding method to allow sending notifications on arbitrary error condition detection with or without an actual exception
+
 0.1.13
 ------
-* bug fix to prevent to_str calls on exceptions to be called when they shouldn't
-  (must've been an order of operations error or something :( )
+* bug fix to prevent to_str calls on exceptions to be called when they shouldn't (must've been an order of operations error or something :( )
 
 0.1.12
 ------
@@ -9,47 +12,36 @@
 
 0.1.11
 ------
-* no longer throw exceptions within handle_exception if the exception raised
-  does not respond_to?(:to_str) (e.g. instances of Class).
+* no longer throw exceptions within handle_exception if the exception raised does not respond_to?(:to_str) (e.g. instances of Class).
 
 0.1.7-10
 --------
-* various attempts to prevent automatic installation of the latest versions of
-  actionpack and activesupport whenever the wrangler gem is installed. giving up
-  at this point, but 0.1.10 will fix a terrible bug introduced in the process
-  of these attempts.
+* various attempts to prevent automatic installation of the latest versions of actionpack and activesupport whenever the wrangler gem is installed. giving up at this point, but 0.1.10 will fix a terrible bug introduced in the process of these attempts.
 
 0.1.5
 -----
-* changed wrangler to log errors before sending notifications in case notification sending
-  somehow results in new exception
-* tried a little harder to ensure that exception messages (instead of just object id) is
-  included in logs and exception notifications
+* changed wrangler to log errors before sending notifications in case notification sending somehow results in new exception
+* tried a little harder to ensure that exception messages (instead of just object id) is included in logs and exception notifications
 
 0.1.4
 -----
-* (attempted) bug fix to get the prior version's feature to work properly (to
-  actually override the parent class's settings)
+* (attempted) bug fix to get the prior version's feature to work properly (to actually override the parent class's settings)
 
 0.1.3
 -----
-* added a means for setting smtp settings without changing the parent class'
-  settings by overriding the smtp_settings getter method
+* added a means for setting smtp settings without changing the parent class' settings by overriding the smtp_settings getter method
 
 2009-11-13
 ----------
-
-* got all of the bugs identified so far (i think) and got a full draft of the
-README file
+* got all of the bugs identified so far (i think) and got a full draft of the README file
 * renamed the gem because of name conflict with an existing gem named juggler(!)
 
 2009-11-12
 ----------
-
 * hunting and killing TODOs
 
 2009-11-11
 ----------
-
 * First draft of the gem
 * Got most things working but a lot of outstanding TODOs
+

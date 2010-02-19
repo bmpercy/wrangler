@@ -8,8 +8,14 @@
   <%= @protocol %><%= @host %><%= @uri %>
 <% end -%>
 
-A <%= @exception_classname %> occurred:
- * <%= @exception_message %>
+A<%= @exception_classname || "n error" %> occurred:
+<%= @error_message %>
+<% if @additional_messages.is_a?(Array) -%>
+  <%= @additional_messages.join("\n  ") %>
+<% else -%>
+  <%= @additional_messages %>
+<% end -%>
+
 <% unless @backtrace.blank? -%>
 in <%= @backtrace.first %>
 <% end -%>

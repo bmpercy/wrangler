@@ -181,13 +181,43 @@ module Wrangler
     return nil
   end
 
+
+  # publicly available method for explicitly telling wrangler to handle
+  # a specific error condition without an actual exception. it's useful if you
+  # want to send a notification after detecting an error condition, but don't
+  # want to interrupt the stack by raising an exception. if you did catch an
+  # exception and want to do somethign similar, just call handle_exception
+  # diretly.
+  #
+  # the error condition will get logged and may result in notification,
+  # according to configuration see notify_on_exception?
+  #
+  # arguments:
+  #   - error_messages: a message or array of messages (each gets logged on
+  #                     separate log call) capturing the error condition that
+  #                     occurred. this will get logged AND sent in any
+  #                     notifications sent
+  #
+  # options: also, any of the options accepted by handle_exception
+  #-----------------------------------------------------------------------------
+  def handle_error(error_messages, options = {})
+    options.merge! :error_messages => error_messages
+    handle_exception(nil, options)
+  end
+
+
   # the main exception-handling method. decides whether to notify or not,
   # whether to render an error page or not, and to make it happen.
   #
   # arguments:
-  #   - exception: the exception that was caught
+  #   - exception: the exception that was caught. can be nil, but should
+  #                only be nil if notifications should always be sent,
+  #                as notification rules are bypassed this case
   #
   # options:
+  #   :error_messages: any additional message to log and send in notification.
+  #                    can also be an array of messages (each gets logged
+  #                    separately)
   #   :request: the request object (if any) that resulted in the exception
   #   :render_errors: boolean indicating if an error page should be rendered
   #                   or not (Rails only)
@@ -199,43 +229,57 @@ module Wrangler
     request = options[:request]
     render_errors = options[:render_errors] || false
     proc_name = options[:proc_name] || config[:app_name]
+    error_messages = options[:error_messages]
 
-    status_code =
-      Wrangler::ExceptionHandler.status_code_for_exception(exception)
-    request_data = request_data_from_request(request) unless request.nil?
-
-    log_exception(exception, request_data, status_code)
-
-    if exception.is_a?(Class)
-      exception_classname = exception.name
+    if exception.nil?
+      exception_classname = nil
+      status_code = nil
+      log_error error_messages
+      error_string = ''
     else
-      exception_classname = exception.class.name
+      status_code =
+        Wrangler::ExceptionHandler.status_code_for_exception(exception)
+
+      request_data = request_data_from_request(request) unless request.nil?
+
+      log_exception(exception, request_data, status_code, error_messages)
+
+      if exception.is_a?(Class)
+        exception_classname = exception.name
+      else
+        exception_classname = exception.class.name
+      end
+
+      if exception.respond_to?(:message)
+        error_string = exception.message
+      else
+        error_string = exception.to_s
+      end
     end
 
-    if exception.respond_to?(:message)
-      exception_string = exception.message
-    else
-      exception_string = exception.to_s
-    end
+    if (exception && notify_on_exception?(exception, status_code)) ||
+       (exception.nil? && notify_in_context?)
 
-    if notify_on_exception?(exception, status_code)
+      backtrace = exception.respond_to?(:backtrace) ? exception.backtrace : nil
+
       if notify_with_delayed_job?
-
         # don't pass in request as it contains not-easily-serializable stuff
         log_error "Wrangler sending email notification asynchronously"
         Wrangler::ExceptionNotifier.send_later(:deliver_exception_notification,
                                               exception_classname,
-                                              exception_string,
+                                              error_string,
+                                              error_messages,
                                               proc_name,
-                                              exception.backtrace,
+                                              backtrace,
                                               status_code,
                                               request_data)
       else
         log_error "Wrangler sending email notification synchronously"
         Wrangler::ExceptionNotifier.deliver_exception_notification(exception_classname,
-                                         exception_string,
+                                         error_string,
+                                         error_messages,
                                          proc_name,
-                                         exception.backtrace,
+                                         backtrace,
                                          status_code,
                                          request_data,
                                          request)
@@ -248,12 +292,12 @@ module Wrangler
   end
 
 
-  # determine if the app is configured to notify for the given exception or
-  # status code
+  # determine if the current context (local?, background) indicates that a
+  # notification should be sent. this applies all of the rules around
+  # notifications EXCEPT for what the current exception or status code is
+  # (see notify_on_exception? for that)
   #-----------------------------------------------------------------------------
-  def notify_on_exception?(exception, status_code = nil)
-    # first determine if we're configured to notify given the context of the
-    # exception
+  def notify_in_context?
     if self.respond_to?(:local_request?)
       if (local_request? && config[:notify_on_local_error]) ||
           (!local_request? && config[:notify_on_public_error])
@@ -264,6 +308,18 @@ module Wrangler
     else
       notify = config[:notify_on_background_error]
     end
+
+    return notify
+  end
+
+
+  # determine if the app is configured to notify for the given exception or
+  # status code
+  #-----------------------------------------------------------------------------
+  def notify_on_exception?(exception, status_code = nil)
+    # first determine if we're configured to notify given the context of the
+    # exception
+    notify = notify_in_context?
 
     # now if config says notify in this case, check if we're configured to
     # notify for this exception or this status code
