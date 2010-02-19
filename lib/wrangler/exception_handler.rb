@@ -231,10 +231,17 @@ module Wrangler
     proc_name = options[:proc_name] || config[:app_name]
     error_messages = options[:error_messages]
 
+    if exception.respond_to?(:backtrace)
+      backtrace = exception.backtrace
+    else
+      backtrace = caller
+    end
+
     if exception.nil?
       exception_classname = nil
       status_code = nil
       log_error error_messages
+      log_error backtrace
       error_string = ''
     else
       status_code =
@@ -259,8 +266,6 @@ module Wrangler
 
     if (exception && notify_on_exception?(exception, status_code)) ||
        (exception.nil? && notify_in_context?)
-
-      backtrace = exception.respond_to?(:backtrace) ? exception.backtrace : nil
 
       if notify_with_delayed_job?
         # don't pass in request as it contains not-easily-serializable stuff
