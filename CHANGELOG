@@ -1,5 +1,9 @@
 HEAD
 ----
+* some comments and notification grammar changes
+
+0.1.14
+----
 * adding method to allow sending notifications on arbitrary error condition detection with or without an actual exception
 
 0.1.13

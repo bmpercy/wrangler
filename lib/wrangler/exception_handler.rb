@@ -220,7 +220,7 @@ module Wrangler
   #                    separately)
   #   :request: the request object (if any) that resulted in the exception
   #   :render_errors: boolean indicating if an error page should be rendered
-  #                   or not (Rails only)
+  #                   or not (Rails only). default => false
   #   :proc_name: a string representation of the process/app that was running
   #               when the exception was raised. default value is
   #               Wrangler::ExceptionHandler.config[:app_name].

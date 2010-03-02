@@ -8,7 +8,7 @@
   <%= @protocol %><%= @host %><%= @uri %>
 <% end -%>
 
-A<%= @exception_classname || "n error" %> occurred:
+A<%= "/an #{@exception_classname}" || "n error" %> occurred:
 <%= @error_message %>
 <% if @additional_messages.is_a?(Array) -%>
   <%= @additional_messages.join("\n  ") %>
