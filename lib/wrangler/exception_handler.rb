@@ -1,8 +1,8 @@
 module Wrangler
 
-  # a utility method that should only be used internally. don't call this; it
-  # should only be called once by the Config class and you can get/set it there.
-  # returns a mapping from exception classes to http status codes
+  # A utility method that should only be used internal to wrangler. don't call
+  # this; it should only be called once by the Config class and you can get/set
+  # it there. returns a mapping from exception classes to http status codes
   #-----------------------------------------------------------------------------
   def self.codes_for_exception_classes
     classes = {
@@ -36,11 +36,11 @@ module Wrangler
 
   # class that holds configuration for the exception handling logic. may also
   # include a helper method or two, but the main interaction with
-  # ExceptionHandler is setting and getting config, e.g.
+  # +ExceptionHandler+ is setting and getting config, e.g.
   #
-  # Wrangler::ExceptionHandler.configure do |handler_config|
-  #   handler_config.merge! :key => value
-  # end
+  #   Wrangler::ExceptionHandler.configure do |handler_config|
+  #     handler_config.merge! :key => value
+  #   end
   #-----------------------------------------------------------------------------
   class ExceptionHandler
 
@@ -100,7 +100,7 @@ module Wrangler
 
     cattr_accessor :config
 
-    # allows for overriding default configuration settings.
+    # Allows for overriding default configuration settings.
     # in your environment.rb or environments/<env name>.rb, use a block that
     # accepts one argument
     # * recommend against naming it 'config' as you will probably be calling it
@@ -111,23 +111,23 @@ module Wrangler
     #   overwriting the arrays/hashes completely unless you don't want to
     #   take advantage of lots of out-of-the-box config
     #
-    # Wrangler::ExceptionHandler.configure do |handler_config|
-    #   handler_config[:key1] = value1
-    #   handler_config[:key2] = value2
-    #   handler_config[:key_for_a_hash].merge! :subkey => value
-    #   handler_config[:key_for_an_array] << another_value
-    # end
+    #   Wrangler::ExceptionHandler.configure do |handler_config|
+    #     handler_config[:key1] = value1
+    #     handler_config[:key2] = value2
+    #     handler_config[:key_for_a_hash].merge! :subkey => value
+    #     handler_config[:key_for_an_array] << another_value
+    #   end
     #
     # OR
     #
-    # Wrangler::ExceptionHandler.configure do |handler_config|
-    #   handler_config.merge! :key1 => value1,
-    #                         :key2 => value2,
-    #   handler_config[:key_for_a_hash].merge! :subkey => value
-    #   handler_config[:key_for_an_array] << another_value
-    # end
+    #   Wrangler::ExceptionHandler.configure do |handler_config|
+    #     handler_config.merge! :key1 => value1,
+    #                           :key2 => value2,
+    #     handler_config[:key_for_a_hash].merge! :subkey => value
+    #     handler_config[:key_for_an_array] << another_value
+    #   end
     #
-    # NOTE: sure, you can change this configuration on the fly in your app, but
+    # *NOTE*: sure, you can change this configuration on the fly in your app, but
     # we don't recommend it. plus, if you do and you're using delayed_job, there
     # may end up being configuration differences between the rails process and
     # the delayed_job process, resulting in unexpected behavior. so recommend
@@ -164,17 +164,27 @@ module Wrangler
   # execute the code block passed as an argument, and follow notification
   # rules if an exception bubbles out of the block.
   #
-  # return value:
-  #   * if an exception bubbles out of the block, the exception is re-raised to
-  #     calling code.
-  #   * otherwise, returns nil
+  # == arguments
+  # [proc_name]  a name for the chunk of code you're running, included in logs
+  #              and in the email notifications' subject line. optional, default
+  #              is nil (nothing will be displayed).
+  # [message]  a message to include in any logs regarding exceptions thrown.
+  #            useful to explain what the context of the code was to help
+  #            diagnose. optional, default is nil (no message will be displayed
+  #            other than the exception's own message).
+  # 
+  # == return value
+  # * if an exception bubbles out of the block, the exception is re-raised to
+  #   calling code.
+  # * otherwise, returns nil
   #-----------------------------------------------------------------------------
-  def notify_on_error(proc_name = nil, &block)
+  def notify_on_error(proc_name = nil, message = nil, &block)
     begin
       yield
     rescue => exception
       options = {}
       options.merge! :proc_name => proc_name unless proc_name.nil?
+      options.merge! :error_messages => message unless message.nil?
       handle_exception(exception, options)
     end
 
@@ -192,13 +202,14 @@ module Wrangler
   # the error condition will get logged and may result in notification,
   # according to configuration see notify_on_exception?
   #
-  # arguments:
-  #   - error_messages: a message or array of messages (each gets logged on
-  #                     separate log call) capturing the error condition that
-  #                     occurred. this will get logged AND sent in any
-  #                     notifications sent
+  # == arguments
+  # [error_messages] a message or array of messages (each gets logged on
+  #                  separate log call) capturing the error condition that
+  #                  occurred. this will get logged AND sent in any
+  #                  notifications sent
   #
-  # options: also, any of the options accepted by handle_exception
+  # == options
+  # also, any of the options accepted by handle_exception
   #-----------------------------------------------------------------------------
   def handle_error(error_messages, options = {})
     options.merge! :error_messages => error_messages
@@ -209,21 +220,21 @@ module Wrangler
   # the main exception-handling method. decides whether to notify or not,
   # whether to render an error page or not, and to make it happen.
   #
-  # arguments:
-  #   - exception: the exception that was caught. can be nil, but should
-  #                only be nil if notifications should always be sent,
-  #                as notification rules are bypassed this case
+  # == arguments
+  # [exception] the exception that was caught. can be nil, but should
+  #             only be nil if notifications should always be sent,
+  #             as notification rules are bypassed this case
   #
-  # options:
-  #   :error_messages: any additional message to log and send in notification.
-  #                    can also be an array of messages (each gets logged
-  #                    separately)
-  #   :request: the request object (if any) that resulted in the exception
-  #   :render_errors: boolean indicating if an error page should be rendered
-  #                   or not (Rails only). default => false
-  #   :proc_name: a string representation of the process/app that was running
-  #               when the exception was raised. default value is
-  #               Wrangler::ExceptionHandler.config[:app_name].
+  # == options
+  # [error_messages] any additional message to log and send in notification.
+  #                  can also be an array of messages (each gets logged
+  #                  separately)
+  # [request] the request object (if any) that resulted in the exception
+  # [render_errors] boolean indicating if an error page should be rendered
+  #                 or not (Rails only). default => false
+  # [proc_name] a string representation of the process/app that was running
+  #             when the exception was raised. default value is
+  #             Wrangler::ExceptionHandler.config[:app_name].
   #-----------------------------------------------------------------------------
   def handle_exception(exception, options = {})
     request = options[:request]
@@ -237,17 +248,21 @@ module Wrangler
       backtrace = caller
     end
 
+    # extract the relevant request data and also filter out any params
+    # that should NOT be logged/emailed (passwords etc.)
+    request_data = request_data_from_request(request) unless request.nil?
+
     if exception.nil?
       exception_classname = nil
       status_code = nil
       log_error error_messages
       log_error backtrace
+      log_error "Request params were:"
+      log_error request_data.to_yaml
       error_string = ''
     else
       status_code =
         Wrangler::ExceptionHandler.status_code_for_exception(exception)
-
-      request_data = request_data_from_request(request) unless request.nil?
 
       log_exception(exception, request_data, status_code, error_messages)
 
@@ -297,10 +312,10 @@ module Wrangler
   end
 
 
-  # determine if the current context (local?, background) indicates that a
+  # determine if the current context (+local?+, +background+) indicates that a
   # notification should be sent. this applies all of the rules around
   # notifications EXCEPT for what the current exception or status code is
-  # (see notify_on_exception? for that)
+  # (see +notify_on_exception?+ for that)
   #-----------------------------------------------------------------------------
   def notify_in_context?
     if self.respond_to?(:local_request?)

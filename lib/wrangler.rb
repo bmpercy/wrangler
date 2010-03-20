@@ -87,6 +87,11 @@ module Wrangler
 
 
     # extract a hash of relevant (and serializable) parameters from a request
+    # NOTE: will obey +filter_paramters+ on any class including the module,
+    # avoid logging any data in the request that the app wouldn't log itself.
+    # +filter_paramters+ must follow the rails convention of returning
+    # the association but with the value obscured in some way
+    # (e.g. "[FILTERED]"). see +filter_paramter_logging+ .
     #---------------------------------------------------------------------------
     def request_data_from_request(request)
       return nil if request.nil?
