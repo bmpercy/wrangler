@@ -1,5 +1,8 @@
 HEAD
 ----
+
+0.1.15
+----
 * some comments and notification grammar changes
 * allowing notify_on_error to accept an optional message that gets logged on error
 * fixing +handle_exception+ so that it logs request contents even if exception is nil
