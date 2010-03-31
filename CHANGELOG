@@ -1,5 +1,8 @@
 HEAD
 ----
+
+0.1.16
+----
 * adding feature to allow blocking notification-sending when http params match certain patterns (e.g. for ignoring browsers you don't like). note that logs can still be logged to error log, just no notifications.
 
 0.1.15
