@@ -55,6 +55,16 @@ module Wrangler
       :notify_on_public_error => true,
       # send email for exceptions caught outside of a controller context
       :notify_on_background_error => true,
+      # configure regular expressions for specific HTTP headers, which if they
+      # match will NOT send notification emails (e.g. for filtering out crazy
+      # browsers).
+      # array of hashes, each with one key (http header string) and a value
+      # (regexp to match in http header string). this allows for more than one
+      # regexp to be specified for the same header if that's more convenient.
+      # any one pattern match will block notification.
+      # note that this looks in all request headers, including query params
+      # (e.g. form fields, url query params)
+      :block_notify_on_request_headers => [],
       # configure whether to send emails synchronously or asynchronously
       # using delayed_job (these can be true even if delayed job is not
       # installed, in which case, will just send emails synchronously anyway)
@@ -279,9 +289,7 @@ module Wrangler
       end
     end
 
-    if (exception && notify_on_exception?(exception, status_code)) ||
-       (exception.nil? && notify_in_context?)
-
+    if send_notification?(exception, request, status_code)
       if notify_with_delayed_job?
         # don't pass in request as it contains not-easily-serializable stuff
         log_error "Wrangler sending email notification asynchronously"
@@ -309,6 +317,46 @@ module Wrangler
     if render_errors
       render_error_template(exception, status_code)
     end
+  end
+
+
+  # determine if a notificaiton should be sent
+  #-----------------------------------------------------------------------------
+  def send_notification?(exception = nil, request = nil, status_code = nil)
+    send_notification = notify_in_context?
+
+    if !send_notification
+      log_error("Will not notify because notify_in_context? returned false")
+    end
+
+    if send_notification && !exception.nil?
+      send_notification &&= notify_on_exception?(exception, status_code)
+      if !send_notification
+        log_error("Will not notify because notify_on_exception? returned false")
+      end
+    end
+
+    if send_notification && !request.nil?
+      config[:block_notify_on_request_headers].each do |headers_and_patterns|
+        headers_and_patterns.each_pair do |header, regexp|
+          # only send notification if the header does NOT match the regexp
+          if request.env.include?(header)
+            send_notification &&= (regexp !~ request.env[header])
+          end
+          if request.env['action_controller.request.query_parameters'].include?(header)
+            send_notification &&= (regexp !~ request.env['action_controller.request.query_parameters'][header])
+          end
+          if request.env['action_controller.request.request_parameters'].include?(header)
+            send_notification &&= (regexp !~ request.env['action_controller.request.request_parameters'][header])
+          end
+        end
+      end
+      if !send_notification
+        log_error "Will not notify because :block_notify_on_request_headers was configured to block this request"
+      end
+    end
+
+    return send_notification
   end
 
 

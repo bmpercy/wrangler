@@ -87,6 +87,12 @@ Here is the full set of configuration values for both classes, as well as their 
       :notify_on_public_error => true,
       # send email for exceptions caught outside of a controller context
       :notify_on_background_error => true,
+      # configure regular expressions for specific HTTP headers, which if they
+      # match will NOT send notification emails (e.g. for filtering out crazy
+      # browsers).
+      # array of hashes, each with one key (http header string) and a value
+      # (regexp to match in http header string)
+      :block_notify_on_request_headers => [],
       # configure whether to send emails synchronously or asynchronously
       # using delayed_job (these can be true even if delayed job is not
       # installed, in which case, will just send emails synchronously anyway)
