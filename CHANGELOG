@@ -1,5 +1,8 @@
 HEAD
 ----
+
+0.1.17
+----
 * fixing bug in notification template that didn't properly display the exception class name.
 
 0.1.16
