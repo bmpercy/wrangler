@@ -86,64 +86,6 @@ module Wrangler
     end
 
 
-    # extract a hash of relevant (and serializable) parameters from a request
-    # NOTE: will obey +filter_paramters+ on any class including the module,
-    # avoid logging any data in the request that the app wouldn't log itself.
-    # +filter_paramters+ must follow the rails convention of returning
-    # the association but with the value obscured in some way
-    # (e.g. "[FILTERED]"). see +filter_paramter_logging+ .
-    #---------------------------------------------------------------------------
-    def request_data_from_request(request)
-      return nil if request.nil?
-
-      request_data = {}
-      request.env.each_pair do |k,v|
-        next if skip_request_env?(k)
-
-        if self.respond_to?(:filter_parameters)
-          request_data.merge! self.send(:filter_parameters, k => v)
-        else
-          request_data.merge! k => v
-        end
-      end
-
-      params = {}
-      if self.respond_to?(:filter_parameters)
-        params.merge!(
-                      filter_parameters(request.env['action_controller.request.query_parameters'])
-                      )
-        params.merge!(
-                      filter_parameters(request.env['action_controller.request.request_parameters'])
-                      )
-      else
-        params.merge! request.env['action_controller.request.query_parameters']
-        params.merge! request.env['action_controller.request.request_parameters']
-      end
-
-      request_data.merge! :params => params unless params.blank?
-
-      return request_data
-    end
-
-
-    # determine if the request env param should be ommitted from the request
-    # data object, as specified in config (either for aesthetic reasons or
-    # because the param won't serialize well).
-    #---------------------------------------------------------------------------
-    def skip_request_env?(request_param)
-      skip_env = false
-      Wrangler::ExceptionHandler.config[:request_env_to_skip].each do |pattern|
-        if (pattern.is_a?(String) && pattern == request_param) ||
-           (pattern.is_a?(Regexp) && pattern =~ request_param)
-          skip_env = true
-          break
-        end
-      end
-
-      return skip_env
-    end
-
-
     # select the proper file to render and do so. if the usual places don't
     # turn up an appropriate template (see README), then fall back on
     # an app-specific default error page or the ultimate back up gem default
@@ -286,5 +228,63 @@ module Wrangler
     end
 
   end # end ControllerMethods module
+
+
+  # extract a hash of relevant (and serializable) parameters from a request
+  # NOTE: will obey +filter_paramters+ on any class including the module,
+  # avoid logging any data in the request that the app wouldn't log itself.
+  # +filter_paramters+ must follow the rails convention of returning
+  # the association but with the value obscured in some way
+  # (e.g. "[FILTERED]"). see +filter_paramter_logging+ .
+  #-----------------------------------------------------------------------------
+  def request_data_from_request(request)
+    return nil if request.nil?
+
+    request_data = {}
+    request.env.each_pair do |k,v|
+      next if skip_request_env?(k)
+
+      if self.respond_to?(:filter_parameters)
+        request_data.merge! self.send(:filter_parameters, k => v)
+      else
+        request_data.merge! k => v
+      end
+    end
+
+    request_params = {}
+    if self.respond_to?(:filter_parameters)
+      request_params.merge!(
+                    filter_parameters(request.env['action_controller.request.query_parameters'])
+                    )
+      request_params.merge!(
+                    filter_parameters(request.env['action_controller.request.request_parameters'])
+                    )
+    else
+      request_params.merge! request.env['action_controller.request.query_parameters']
+      request_params.merge! request.env['action_controller.request.request_parameters']
+    end
+
+    request_data.merge! :params => request_params unless request_params.blank?
+
+    return request_data
+  end
+
+
+  # determine if the request env param should be ommitted from the request
+  # data object, as specified in config (either for aesthetic reasons or
+  # because the param won't serialize well).
+  #---------------------------------------------------------------------------
+  def skip_request_env?(request_param)
+    skip_env = false
+    Wrangler::ExceptionHandler.config[:request_env_to_skip].each do |pattern|
+      if (pattern.is_a?(String) && pattern == request_param) ||
+         (pattern.is_a?(Regexp) && pattern =~ request_param)
+        skip_env = true
+        break
+      end
+    end
+
+    return skip_env
+  end
 
 end # end Wrangler module
