@@ -1,5 +1,8 @@
 HEAD
 ----
+
+0.1.18
+----
 * fixing a bug that arises when code that either isn't an ActionController::Base that includes Wrangler or doesn't include Wrangler module at all passes in a request object to handle_error or handle_exception...because the request_data_from_request method was only available to controllers that included Wrangler. moved the relevant methods out into plain old Wrangler module.
 
 0.1.17
