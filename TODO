@@ -1,11 +1,5 @@
 This is a collection of things that could/should be worked on:
 
-== Right away:
-* rename the gem (see a juggler on gemcutter already!)
-** remove repository on github
-** create new repository and upload
-** push to gemcutter
-
 == Robustness:
 * in juggler.rb : render_error_template(), if we fail to find a template for the
 exception/status code, we just log that fact right now. this is probably worth
