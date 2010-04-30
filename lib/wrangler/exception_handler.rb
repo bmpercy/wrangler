@@ -80,7 +80,7 @@ module Wrangler
       # where to look for app-specific error page templates (ones you create
       # yourself, for example...there are some defaults in this gem you can
       # use as well...and that are configured already by default)
-      :error_template_dir => File.join(RAILS_ROOT, 'app', 'views', 'error'),
+      :error_template_dir => (defined?(RAILS_ROOT) ? File.join(RAILS_ROOT, 'app', 'views', 'error') : nil),
       # excplicit mappings from exception class to arbitrary error page
       # templates, different set for html and js responses (Wrangler determines
       # which to use automatically, so you can have an entry in both
@@ -108,7 +108,12 @@ module Wrangler
         File.join(WRANGLER_ROOT,'rails','app','views','wrangler','500.html')
     }
 
-    cattr_accessor :config
+    # give access to config
+    #-----------------------------------------------------------------------------
+    def self.config
+      @@config
+    end
+
 
     # Allows for overriding default configuration settings.
     # in your environment.rb or environments/<env name>.rb, use a block that

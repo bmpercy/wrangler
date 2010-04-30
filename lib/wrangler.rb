@@ -1,13 +1,17 @@
 require 'wrangler/wrangler_helper.rb'
 require 'wrangler/exception_handler.rb'
-require 'wrangler/exception_notifier.rb'
+
+# the notifier is till rails-dependent...
+if defined?(Rails)
+  require 'wrangler/exception_notifier.rb'
+end
 require 'wrangler/wrangler_exceptions.rb'
 
 module Wrangler
 
   def self.included(base)
     # only add in the controller-specific methods if the including class is one
-    if class_has_ancestor?(base, ActionController::Base)
+    if defined?(Rails) && class_has_ancestor?(base, ActionController::Base)
       base.send(:include, ControllerMethods)
 
       # conditionally including these methods (each wrapped in a separate
