@@ -1,7 +1,7 @@
 require 'wrangler/wrangler_helper.rb'
 require 'wrangler/exception_handler.rb'
 
-# the notifier is till rails-dependent...
+# the notifier is still rails-dependent...
 if defined?(Rails)
   require 'wrangler/exception_notifier.rb'
 end

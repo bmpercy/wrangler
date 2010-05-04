@@ -1,6 +1,10 @@
 HEAD
 ----
 
+0.1.20
+----
+* make wrangler a little less rails-specific. won't be able to send notifications, but can at least include Wrangler....
+
 0.1.19
 ----
 * default the error string (becomes part of email subject content) to first error in error_messages if there is no exception object
