@@ -8,6 +8,8 @@
   <%= @protocol %><%= @host %><%= @uri %>
 <% end -%>
 
+At <%= Time.now %>:
+
 <% if !@exception_classname.nil? -%>
 A/an <%= @exception_classname %> occurred:
 <% else -%>
@@ -54,4 +56,13 @@ REQUEST DATA
   <% @request_data.keys.sort.each do |k| -%>
 <%= "#{k}: #{@request_data[k].inspect}" %>
   <% end -%>
+<% end -%>
+
+<% unless @supplementary_info.blank? -%>
+--------------------------------------------------
+SUPPLEMENTARY INFO
+--------------------------------------------------
+<% @supplementary_info.each do |line| -%>
+<%= line %>
+<% end -%>
 <% end -%>

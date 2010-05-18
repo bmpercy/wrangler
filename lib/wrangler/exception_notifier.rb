@@ -62,6 +62,10 @@ module Wrangler
     #   - backtrace: the stack trace from the exception (passing in excplicitly
     #                because serializing the exception does not preserve the
     #                backtrace (in case delayed_job is used to async the email)
+    #   - supplementary_info: any other messages to be dumped into the
+    #                         notification email. these are provided by the
+    #                         client code via the :call_for_supplementary_info
+    #                         option. can be a string or an array of strings.
     #   - status_code: the (string) http status code that the exception has been
     #                  mapped to. Optional, but no default is provided, so
     #                  no status code info will be contained in the email.
@@ -78,6 +82,7 @@ module Wrangler
                                additional_messages,
                                proc_name,
                                backtrace,
+                               supplementary_info,
                                status_code = nil,
                                request_data = nil,
                                request = nil)
@@ -102,6 +107,7 @@ module Wrangler
           :error_message => error_message,
           :additional_messages => additional_messages,
           :backtrace =>    backtrace,
+          :supplementary_info => supplementary_info,
           :status_code =>  status_code,
           :request_data => request_data,
           :request =>      request

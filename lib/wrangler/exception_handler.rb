@@ -105,7 +105,18 @@ module Wrangler
       # if you do change this, you really should have a good reason for it and
       # really know what you're doing. really.
       :absolute_last_resort_default_error_template =>
-        File.join(WRANGLER_ROOT,'rails','app','views','wrangler','500.html')
+        File.join(WRANGLER_ROOT,'rails','app','views','wrangler','500.html'),
+
+      # allows for inserting additional data/comments/status/environment into
+      # the notification emails. possibilities include fetching the release number,
+      # patch info, current state of different services....
+      # pass a proc instance that accepts a single
+      # argument, the request object (if any).
+      # (e.g. +Proc.new { |request| puts "request is: #{request}" }+, but don't
+      # do that, that would be redundant, silly and not secure).
+      # NOTE: +request+ can be nil (if background process, for example), so
+      # implement accordingly
+      :call_for_supplementary_info => nil
     }
 
     # give access to config
@@ -255,7 +266,7 @@ module Wrangler
     request = options[:request]
     render_errors = options[:render_errors] || false
     proc_name = options[:proc_name] || config[:app_name]
-    error_messages = options[:error_messages]
+    error_messages = options[:error_messages] || []
 
     if exception.respond_to?(:backtrace)
       backtrace = exception.backtrace
@@ -266,6 +277,26 @@ module Wrangler
     # extract the relevant request data and also filter out any params
     # that should NOT be logged/emailed (passwords etc.)
     request_data = request_data_from_request(request) unless request.nil?
+
+    supplementary_info = nil
+
+    log_error "\n\nTODO: going to call for supplementary info...?"
+    log_error "TODO: :call_for_supplementary_info is: #{config[:call_for_supplementary_info]}\n\n"
+
+    unless config[:call_for_supplementary_info].nil?
+
+      log_error "\n\nTODO: calling for supplementary info"
+
+      supplementary_info = config[:call_for_supplementary_info].call(request)
+      supplementary_info = [supplementary_info] unless supplementary_info.is_a?(Array)
+
+      log_error "TODO: supplementary info: #{supplementary_info.inspect}\n\n"
+    end
+
+    unless supplementary_info.blank?
+      error_messages << "Supplementary info:"
+      error_messages += supplementary_info
+    end
 
     if exception.nil?
       exception_classname = nil
@@ -308,6 +339,7 @@ module Wrangler
                                               error_messages,
                                               proc_name,
                                               backtrace,
+                                              supplementary_info,
                                               status_code,
                                               request_data)
       else
@@ -317,6 +349,7 @@ module Wrangler
                                          error_messages,
                                          proc_name,
                                          backtrace,
+                                         supplementary_info,
                                          status_code,
                                          request_data,
                                          request)
