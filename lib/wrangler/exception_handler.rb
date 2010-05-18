@@ -280,17 +280,9 @@ module Wrangler
 
     supplementary_info = nil
 
-    log_error "\n\nTODO: going to call for supplementary info...?"
-    log_error "TODO: :call_for_supplementary_info is: #{config[:call_for_supplementary_info]}\n\n"
-
     unless config[:call_for_supplementary_info].nil?
-
-      log_error "\n\nTODO: calling for supplementary info"
-
       supplementary_info = config[:call_for_supplementary_info].call(request)
       supplementary_info = [supplementary_info] unless supplementary_info.is_a?(Array)
-
-      log_error "TODO: supplementary info: #{supplementary_info.inspect}\n\n"
     end
 
     unless supplementary_info.blank?
