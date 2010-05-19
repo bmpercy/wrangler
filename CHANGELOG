@@ -1,5 +1,9 @@
 HEAD
 ----
+
+
+0.1.21
+----
 * adding ability to call some arbitrary code to fetch arbitrary data (defined by the client code) to insert into notification emails. see :call_for_supplementary_info option
 
 0.1.20
