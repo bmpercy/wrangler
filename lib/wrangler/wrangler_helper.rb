@@ -72,7 +72,7 @@ module Wrangler
 
     if error_messages.is_a?(Array)
       msgs.concat error_messages
-    elsif !error_messages.blank?
+    elsif !error_messages.nil? && !error_messages.empty?
       msgs << error_messages
     end
 

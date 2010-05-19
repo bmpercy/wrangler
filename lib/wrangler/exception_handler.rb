@@ -266,7 +266,9 @@ module Wrangler
     request = options[:request]
     render_errors = options[:render_errors] || false
     proc_name = options[:proc_name] || config[:app_name]
-    error_messages = options[:error_messages] || []
+    error_messages = options[:error_messages] || ['']
+
+    error_messages = [error_messages] unless error_messages.is_a?(Array)
 
     if exception.respond_to?(:backtrace)
       backtrace = exception.backtrace
@@ -293,15 +295,11 @@ module Wrangler
     if exception.nil?
       exception_classname = nil
       status_code = nil
-      log_error error_messages
+      log_error error_messages.inspect
       log_error backtrace
       log_error "Request params were:"
       log_error request_data.to_yaml
-      if error_messages.is_a?(Array)
-        error_string = error_messages.first
-      else
-        error_string = error_messages
-      end
+      error_string = error_messages.first
     else
       status_code =
         Wrangler::ExceptionHandler.status_code_for_exception(exception)
