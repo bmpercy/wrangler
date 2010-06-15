@@ -23,15 +23,19 @@ module Wrangler
   #            classes as an ancestor
   #   - other_klasses: a Class, an Array (or any other container that responds
   #                    to include?() ) of Classes
+  # 
   #-----------------------------------------------------------------------------
   def class_has_ancestor?(klass, other_klasses)
     return nil if !klass.is_a?(Class)
 
-    other_klasses = [other_klasses] if other_klasses.is_a?(Class)
+    other_klasses = [other_klasses] unless other_klasses.is_a?(Array)
+    if other_klasses.first.is_a?(Class)
+      other_klasses.map! { |k| k.name }
+    end
 
     current_klass = klass
     while current_klass
-      return current_klass if other_klasses.include?(current_klass)
+      return current_klass if other_klasses.include?(current_klass.name)
       current_klass = current_klass.superclass
     end
 

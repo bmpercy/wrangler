@@ -100,7 +100,7 @@ module Wrangler
       
       # if that didn't work, fall back on configured app-specific default
       if file_path.blank? || !File.exists?(file_path)
-        file_path = config[:default_error_template]
+        file_path = Wrangler::Exception_handler.config[:default_error_template]
 
         log_error(["Could not find an error template in the usual places " +
                   "for exception #{exception.class}, status code " +
@@ -110,7 +110,7 @@ module Wrangler
 
       # as a last resort, just render the gem's 500 error
       if file_path.blank? || !File.exists?(file_path)
-        file_path = config[:absolute_last_resort_default_error_template]
+        file_path = Wrangler::ExceptionHandler.config[:absolute_last_resort_default_error_template]
 
         log_error("Still no template found. Using gem default of " +
                   file_path)
@@ -118,8 +118,13 @@ module Wrangler
 
       log_error("Will render error template: '#{file_path}'")
 
-      render :file => file_path,
-             :status => status_code
+      options = { :file => file_path, :status => status_code }
+
+      unless Wrangler::ExceptionHandler.config[:render_error_options].blank?
+        options.merge! Wrangler::ExceptionHandler.config[:render_error_options]
+      end
+
+      render options
     end
 
 
@@ -148,21 +153,20 @@ module Wrangler
       case request.format
       when /html/
         response_format = 'html'
-        template_mappings = config[:error_class_html_templates]
+        template_mappings = Wrangler::ExceptionHandler.config[:error_class_html_templates]
       when /js/
         response_format = 'js'
-        template_mappings = config[:error_class_js_templates]
+        template_mappings = Wrangler::ExceptionHandler.config[:error_class_js_templates]
       when /xml/
         'xml'
       end
       format_extension_pattern = ".#{response_format || ''}*"
 
       if template_mappings
-
         # search for direct mapping from exception name to error template
 
-        if template_mappings[exception_class]
-          error_file = template_mappings[exception_class]
+        if template_mappings[exception_class.name]
+          error_file = template_mappings[exception_class.name]
 
           return error_file if File.exists?(error_file)
 
@@ -172,13 +176,12 @@ module Wrangler
         end
 
         # search for mapping from an ancestor class to error template
-
         ancestor_class =
           Wrangler::class_has_ancestor?(exception_class.superclass,
-                                       template_mappings)
+                                       template_mappings.keys)
 
         if ancestor_class
-          error_file = template_mappings[ancestor_class]
+          error_file = template_mappings[ancestor_class.name]
 
           return error_file if File.exists?(error_file)
 
@@ -191,7 +194,7 @@ module Wrangler
 
       # search for a file named after the exception in one of the search dirs
 
-      search_paths = [ config[:error_template_dir],
+      search_paths = [ Wrangler::ExceptionHandler::config[:error_template_dir],
                        File.join(RAILS_ROOT, 'public'),
                        File.join(WRANGLER_ROOT, 'rails', 'app', 'views', 'wrangler')
                      ]

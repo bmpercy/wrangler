@@ -7,28 +7,28 @@ module Wrangler
   def self.codes_for_exception_classes
     classes = {
       # These are standard errors in rails / ruby
-      NameError =>      "503",
-      TypeError =>      "503",
-      RuntimeError =>   "500",
-      ArgumentError =>  "500",
+      NameError.name =>      "503",
+      TypeError.name =>      "503",
+      RuntimeError.name =>   "500",
+      ArgumentError.name =>  "500",
       # the default mapping for an unrecognized exception class
       :default => "500"
     }
 
     # from exception_notification gem:
     # Highly dependent on the verison of rails, so we're very protective about these'
-    classes.merge!({ ActionView::TemplateError => "500"})             if defined?(ActionView)       && ActionView.const_defined?(:TemplateError)
-    classes.merge!({ ActiveRecord::RecordNotFound => "400" })         if defined?(ActiveRecord)     && ActiveRecord.const_defined?(:RecordNotFound)
-    classes.merge!({ ActiveResource::ResourceNotFound => "404" })     if defined?(ActiveResource)   && ActiveResource.const_defined?(:ResourceNotFound)
+    classes.merge!({ ActionView::TemplateError.name => "500"})             if defined?(ActionView)       && ActionView.const_defined?(:TemplateError)
+    classes.merge!({ ActiveRecord::RecordNotFound.name => "400" })         if defined?(ActiveRecord)     && ActiveRecord.const_defined?(:RecordNotFound)
+    classes.merge!({ ActiveResource::ResourceNotFound.name => "404" })     if defined?(ActiveResource)   && ActiveResource.const_defined?(:ResourceNotFound)
 
     # from exception_notification gem:
     if defined?(ActionController)
-      classes.merge!({ ActionController::UnknownController => "404" })          if ActionController.const_defined?(:UnknownController)
-      classes.merge!({ ActionController::MissingTemplate => "404" })            if ActionController.const_defined?(:MissingTemplate)
-      classes.merge!({ ActionController::MethodNotAllowed => "405" })           if ActionController.const_defined?(:MethodNotAllowed)
-      classes.merge!({ ActionController::UnknownAction => "501" })              if ActionController.const_defined?(:UnknownAction)
-      classes.merge!({ ActionController::RoutingError => "404" })               if ActionController.const_defined?(:RoutingError)
-      classes.merge!({ ActionController::InvalidAuthenticityToken => "405" })   if ActionController.const_defined?(:InvalidAuthenticityToken)
+      classes.merge!({ ActionController::UnknownController.name => "404" })          if ActionController.const_defined?(:UnknownController)
+      classes.merge!({ ActionController::MissingTemplate.name => "404" })            if ActionController.const_defined?(:MissingTemplate)
+      classes.merge!({ ActionController::MethodNotAllowed.name => "405" })           if ActionController.const_defined?(:MethodNotAllowed)
+      classes.merge!({ ActionController::UnknownAction.name => "501" })              if ActionController.const_defined?(:UnknownAction)
+      classes.merge!({ ActionController::RoutingError.name => "404" })               if ActionController.const_defined?(:RoutingError)
+      classes.merge!({ ActionController::InvalidAuthenticityToken.name => "405" })   if ActionController.const_defined?(:InvalidAuthenticityToken)
     end
 
     return classes
@@ -72,6 +72,9 @@ module Wrangler
       :delayed_job_for_non_controller_errors => true,
       # mappings from exception classes to http status codes (see above)
       # add/remove from this list as desired in environment configuration
+      # note that the keys are String names of the classes, not the class
+      # constants themselves
+      # (e.g. "StandardError" => "500",    and _NOT_ StandardError => "500")
       :error_class_status_codes => Wrangler::codes_for_exception_classes,
       # explicitly indicate which exceptions to send email notifications for
       :notify_exception_classes => %w(),
@@ -81,12 +84,20 @@ module Wrangler
       # yourself, for example...there are some defaults in this gem you can
       # use as well...and that are configured already by default)
       :error_template_dir => (defined?(RAILS_ROOT) ? File.join(RAILS_ROOT, 'app', 'views', 'error') : nil),
-      # excplicit mappings from exception class to arbitrary error page
+      # explicit mappings from exception class to arbitrary error page
       # templates, different set for html and js responses (Wrangler determines
       # which to use automatically, so you can have an entry in both
       # hashes for the same error class)
+      # note that the keys are String names of the classes, not the class
+      # constants themselves
+      # (e.g. "StandardError" => "file",    and _NOT_ StandardError => "file")
       :error_class_html_templates => {},
       :error_class_js_templates => {},
+      # you can specify options to pass to the render() call when rendering
+      # error page for errors. This is applied globally, so plan accordingly
+      # (one good option is to pass in :layout => 'my_layout' so your app
+      # layout gets applied to the error templates)
+      :render_error_options => {},
       # you can specify a fallback failsafe error template to render if
       # no appropriate template is found in the usual places (you shouldn't
       # rely on this, and error messages will be logged if this template is
@@ -106,7 +117,6 @@ module Wrangler
       # really know what you're doing. really.
       :absolute_last_resort_default_error_template =>
         File.join(WRANGLER_ROOT,'rails','app','views','wrangler','500.html'),
-
       # allows for inserting additional data/comments/status/environment into
       # the notification emails. possibilities include fetching the release number,
       # patch info, current state of different services....
@@ -173,7 +183,7 @@ module Wrangler
       if exception.respond_to?(:status_code)
         return exception.status_code
       else
-        return config[:error_class_status_codes][exception.class] ||
+        return config[:error_class_status_codes][exception.class.name] ||
                config[:error_class_status_codes][:default]
       end
     end

@@ -1,6 +1,8 @@
 HEAD
 ----
-
+* fixing broken logic to look up error page templates by exception superclass
+* fixing status code and error template lookup by exception class when cache_classes is false
+** NOTE the change in specifying the config for exception lookups to use the exception class NAME, not the class constant (e.g. "StandardError" and no longer StandardError)
 
 0.1.21
 ----
