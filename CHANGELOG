@@ -1,6 +1,10 @@
 HEAD
 ----
 
+0.1.23
+----
+* made the css class for error messages more specific to wrangler so there are no conflicts with css classes a website is already using
+
 0.1.22
 ----
 * fixing broken logic to look up error page templates by exception superclass
