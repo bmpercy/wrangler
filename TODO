@@ -13,6 +13,10 @@ the backtrace before stuffing it into email...from what i could tell from a
 quick look, it seemed like it was just cleaning up the stack trace, substituting
 [RAILS ROOT] for the path to the rails app (which should make it shorter, but
 maybe also to hide the location of the app?)
+* resolve the dependency on action mailer so it doesn't install lots of extra
+gems every time. also use more up-to-date method of specifying dependencies as
+add_dependency appears to be deprecated in rubygems 1.3.6 or 1.3.7 (but remain
+backwards compatible with 1.3.5)
 
 == Configuration/flexibility:
 * allow for a hash to map status_codes to arbitrary templates explicitly instead

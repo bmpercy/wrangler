@@ -1,6 +1,10 @@
 HEAD
 ----
 
+0.1.24
+----
+* fixing duplicate message in notification email for handle_error calls
+
 0.1.23
 ----
 * made the css class for error messages more specific to wrangler so there are no conflicts with css classes a website is already using

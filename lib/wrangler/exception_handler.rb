@@ -309,7 +309,7 @@ module Wrangler
       log_error backtrace
       log_error "Request params were:"
       log_error request_data.to_yaml
-      error_string = error_messages.first
+      error_string = error_messages.shift
     else
       status_code =
         Wrangler::ExceptionHandler.status_code_for_exception(exception)

@@ -20,7 +20,10 @@ DESC
     gemspec.email = "percivalatumamibuddotcom"
     gemspec.homepage = "http://github.com/bmpercy/wrangler"
     gemspec.authors = ['Brian Percival']
-    gemspec.add_dependency 'actionmailer', '>= 2.1.0'
+# TODO: this dependency causes all sorts of problems with extra gem installs
+#       (like the latest rails every new release). also add_dependency is
+#       deprecated
+#    gemspec.add_dependency 'actionmailer', '>= 2.1.0'
     gemspec.files = ["wrangler.gemspec",
                      "[A-Z]*.*",
                      "lib/**/*.rb",
