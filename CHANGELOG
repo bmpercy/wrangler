@@ -1,6 +1,11 @@
 HEAD
 ----
 
+0.1.25
+----
+* adding some error handling in the exception handler where we send email notifications in case the mail-sending itself fails, don't want exceptions to bubble up.
+* if error occurs in email sending, will attempt to enqueue with delayed_job (if delayed_job appears to be present)
+
 0.1.24
 ----
 * fixing duplicate message in notification email for handle_error calls

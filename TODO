@@ -1,5 +1,9 @@
 This is a collection of things that could/should be worked on:
 
+== Interaction with other libs:
+* make compatible with newer versions of delayed_job...but maintain
+compatibility with the send_later() version.
+
 == Robustness:
 * in wrangler.rb : render_error_template(), if we fail to find a template for the
 exception/status code, we just log that fact right now. this is probably worth

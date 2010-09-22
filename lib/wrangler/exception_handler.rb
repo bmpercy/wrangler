@@ -359,6 +359,39 @@ module Wrangler
     if render_errors
       render_error_template(exception, status_code)
     end
+
+  rescue Exception => unhandled_exception
+    # if it looks like a temporary error interacting with SMTP, then enqueue
+    # the error using delayed job if possible
+    # (testing by name this way in case the exception isn't loaded into
+    # environment, which would cause a NameError and be counterproductive...)
+    if unhandled_exception.class.name == 'Net::SMTPAuthenticationError' &&
+       Wrangler::ExceptionNotifier.respond_to?(:send_later)
+
+      log_error "Wrangler failed to send error notification: #{unhandled_exception.class.name}:"
+      log_error "  #{unhandled_exception.to_s}"
+
+      # note: this is specific to an old-ish version of delayed job...should
+      # make wrangler compatible with the old and the new...
+      log_error "Wrangler attempting to send via delayed job"
+        Wrangler::ExceptionNotifier.send_later(:deliver_exception_notification,
+                                              exception_classname,
+                                              error_string,
+                                              error_messages,
+                                              proc_name,
+                                              backtrace,
+                                              supplementary_info,
+                                              status_code,
+                                              request_data)
+    else
+      log_error "/!\\ FAILSAFE /!\\ Wrangler encountered an unhandled exception " +
+                "while trying to handle an error. The arguments it received " +
+                "were:"
+      log_error "  exception: #{exception.inspect}"
+      log_error "  options: #{options.inspect}"
+      log_error "The unhandled error encountered was #{unhandled_exception.class.name}:"
+      log_error "  #{unhandled_exception.to_s}"
+    end
   end
 
 
