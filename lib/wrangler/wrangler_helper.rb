@@ -103,7 +103,7 @@ module Wrangler
     end
 
     msgs.each do |m|
-      if respond_to?(:logger)
+      if respond_to?(:logger) && !logger.blank?
         logger.error m
       else
         puts m
