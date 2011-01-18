@@ -1,6 +1,10 @@
 HEAD
 ----
 
+0.1.26
+----
+* don't try to use logger accessor if logger is nil (default to puts in that case)
+
 0.1.25
 ----
 * adding some error handling in the exception handler where we send email notifications in case the mail-sending itself fails, don't want exceptions to bubble up.
